@@ -4,7 +4,9 @@ param(
     [switch] $UseSrc,
 
     [Parameter(Mandatory = $true, ParameterSetName = 'UsePackageExport')]
-    [switch] $UsePackageExport
+    [switch] $UsePackageExport,
+
+    [switch] $NoFail
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,6 +36,8 @@ New-Item -Path Variable:"Global:SubjectModuleName" -Value $moduleName -Force | O
 $pesterConfig = New-PesterConfiguration @{
     Run = @{
         Path = "$PSScriptRoot/../test"
+        Throw = (-not $NoFail)
+        PassThru = $true
     }
     TestResult = @{
         Enabled = $true
@@ -52,7 +56,7 @@ $pesterConfig = New-PesterConfiguration @{
 $ps = [System.IO.Path]::PathSeparator
 $Env:PSModulePath = "${newPsmodulePathEntry}${ps}$Env:PSModulePath"
 try {
-    Invoke-Pester -Configuration $pesterConfig
+    Invoke-Pester -Configuration $pesterConfig | Format-Table -AutoSize
 } finally {
     $Env:PSModulePath = $Env:PSModulePath.Replace("${newPsmodulePathEntry}${ps}", "")
     Remove-Item -Path Variable:"Global:SubjectModuleName" -Force -ErrorAction SilentlyContinue
