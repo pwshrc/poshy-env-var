@@ -86,7 +86,6 @@ function New-TemporaryProjectFile {
         "AppendRuntimeIdentifierToOutputPath" = "false"
         "NoBuild" = "true"
         "IncludeBuildOutput" = "false"
-        "EnablePackageValidation" = "true"
         "PackageId" = $PackageId
         "Version" = $PackageVersion
         "PackageVersion" = $PackageVersion
