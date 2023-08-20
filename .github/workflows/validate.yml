@@ -25,6 +25,8 @@ jobs:
           Install-Module PSScriptAnalyzer -ErrorAction Stop
       - name: Check out repository code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Lint with PSScriptAnalyzer
         shell: pwsh
         run: ./scripts/lint.ps1
@@ -44,6 +46,8 @@ jobs:
       shell: pwsh
       run: |
         dotnet tool install --global GitVersion.Tool --version 5.*
+    - name: Check out repository code
+      uses: actions/checkout@v3
     - name: Determine version
       shell: pwsh
       run: |
@@ -70,6 +74,10 @@ jobs:
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
+    - name: Check out repository code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Build PSGallery package
       shell: pwsh
       run: |
@@ -100,6 +108,8 @@ jobs:
         Install-Module Pester -ErrorAction Stop
     - name: Check out repository code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
@@ -134,6 +144,8 @@ jobs:
         Install-Module Pester -ErrorAction Stop
     - name: Check out repository code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
@@ -168,6 +180,8 @@ jobs:
         Install-Module Pester -ErrorAction Stop
     - name: Check out repository code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
