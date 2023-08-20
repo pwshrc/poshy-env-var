@@ -105,7 +105,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content ./out/version.json | ConvertFrom-Json
+        $version = Get-Content -Raw ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
@@ -177,7 +177,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content ./out/version.json | ConvertFrom-Json
+        $version = Get-Content ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
