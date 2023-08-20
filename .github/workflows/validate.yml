@@ -11,6 +11,8 @@ jobs:
     name: Lint with PSScriptAnalyzer
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
       - name: Setup PowerShell module cache
         id: cacher
         uses: actions/cache@v3
@@ -23,8 +25,6 @@ jobs:
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module PSScriptAnalyzer -ErrorAction Stop
-      - name: Check out repository code
-        uses: actions/checkout@v3
       - name: Lint with PSScriptAnalyzer
         shell: pwsh
         run: ./scripts/lint.ps1 -NoFail
@@ -45,7 +45,7 @@ jobs:
       if: steps.cacher.outputs.cache-hit != 'true'
       shell: pwsh
       run: dotnet tool install --global GitVersion.Tool --version 5.12
-    - name: Check out repository code
+    - name: Check out repository full history
       uses: actions/checkout@v3
       with:
         fetch-depth: 0  # GitVersion requires the full history to calculate the version.
@@ -78,6 +78,10 @@ jobs:
     needs: determine-version
     runs-on: ubuntu-latest
     steps:
+    - name: Check out repository full history
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # create-release-notes requires the full history to create the release notes.
     - name: Download version.json
       uses: actions/download-artifact@v2
       with:
@@ -91,9 +95,6 @@ jobs:
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0  # create-release-notes requires the full history to create the release notes.
     - name: Create release notes
       id: create_release_notes
       uses: johnyherangi/create-release-notes@main
@@ -117,9 +118,11 @@ jobs:
 
   build-release-package:
     name: Build Release Package
-    needs: [create-releasenotes, lint-with-psscriptanalyzer]
+    needs: [create-releasenotes]
     runs-on: ubuntu-latest
     steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
     - name: Download version.json
       uses: actions/download-artifact@v2
       with:
@@ -138,12 +141,9 @@ jobs:
       with:
         name: release-notes.md
         path: ./out/
-    - name: Check out repository code
-      uses: actions/checkout@v3
     - name: Build PSGallery package
       shell: pwsh
       run: |
-        Get-ChildItem -Path ./out -Filter ** -Recurse -Force
         $releaseNotes = (Get-Content -Raw -Path ./out/release-notes.md -Encoding UTF8).Trim()
         $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         ./scripts/package.ps1 -PackageVersionNuGet $version.NuGetVersionV2 -PackageVersionMajorMinorPatchBuild $version.AssemblySemVer -PackageVersionMajorMinorPatch $version.MajorMinorPatch -PackageVersionPrereleaseTag $version.PrereleaseTag -ReleaseNotes $releaseNotes -CommitSha $version.Sha
@@ -158,6 +158,8 @@ jobs:
     needs: build-release-package
     runs-on: ubuntu-latest
     steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
     - name: Setup PowerShell module cache
       id: cacher
       uses: actions/cache@v3
@@ -170,8 +172,6 @@ jobs:
       run: |
         Set-PSRepository PSGallery -InstallationPolicy Trusted
         Install-Module Pester -ErrorAction Stop
-    - name: Check out repository code
-      uses: actions/checkout@v3
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
@@ -192,6 +192,8 @@ jobs:
     needs: build-release-package
     runs-on: windows-latest
     steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
     - name: Setup PowerShell module cache
       id: cacher
       uses: actions/cache@v3
@@ -204,8 +206,6 @@ jobs:
       run: |
         Set-PSRepository PSGallery -InstallationPolicy Trusted
         Install-Module Pester -ErrorAction Stop
-    - name: Check out repository code
-      uses: actions/checkout@v3
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
@@ -226,6 +226,8 @@ jobs:
     needs: build-release-package
     runs-on: macos-latest
     steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
     - name: Setup PowerShell module cache
       id: cacher
       uses: actions/cache@v3
@@ -238,8 +240,6 @@ jobs:
       run: |
         Set-PSRepository PSGallery -InstallationPolicy Trusted
         Install-Module Pester -ErrorAction Stop
-    - name: Check out repository code
-      uses: actions/checkout@v3
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
