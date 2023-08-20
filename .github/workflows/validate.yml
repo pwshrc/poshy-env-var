@@ -87,7 +87,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content version.json | ConvertFrom-Json
+        $version = Get-Content -Path ./out/version.json | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
@@ -107,7 +107,7 @@ jobs:
         RELEASE_NOTES: ${{ steps.create_release_notes.outputs.release-notes }}
       run: |
         $releaseNotes = ($env:RELEASE_NOTES).Trim()
-        $releaseNotes | Out-File release-notes.md -Encoding UTF8
+        $releaseNotes | Out-File ./out/release-notes.md -Encoding UTF8
     - name: Upload release-notes.md
       uses: actions/upload-artifact@v2
       with:
@@ -128,7 +128,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content version.json | ConvertFrom-Json
+        $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
@@ -142,8 +142,8 @@ jobs:
     - name: Build PSGallery package
       shell: pwsh
       run: |
-        $releaseNotes = (Get-Content -Raw ./out/release-notes.md -Encoding UTF8).Trim()
-        $version = Get-Content ./out/version.json | ConvertFrom-Json
+        $releaseNotes = (Get-Content -Raw -Path ./out/release-notes.md -Encoding UTF8).Trim()
+        $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         ./scripts/package.ps1 -PackageVersionNuGet $version.NuGetVersionV2 -PackageVersionMajorMinorPatchBuild $version.AssemblySemVer -PackageVersionMajorMinorPatch $version.MajorMinorPatch -PackageVersionPrereleaseTag $version.PrereleaseTag -ReleaseNotes $releaseNotes -CommitSha $version.Sha
     - name: Upload PSGallery package
       uses: actions/upload-artifact@v3
@@ -182,7 +182,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: tests-ubuntu-latest
-        path: out/test-*.xml
+        path: ./out/test-*.xml
       if: ${{ always() }}
 
   test-windows-latest:
@@ -216,7 +216,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: tests-windows-latest
-        path: out/test-*.xml
+        path: ./out/test-*.xml
       if: ${{ always() }}
 
   test-macos-latest:
