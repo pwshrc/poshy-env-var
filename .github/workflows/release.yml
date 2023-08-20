@@ -82,12 +82,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [begin-release]
     steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
         name: PSGallery-package
         path: ./out/
-    - uses: actions/checkout@v3
     - name: Publish to PSGallery
       shell: pwsh
       run: ./build/publish.ps1 -NUGET_KEY "abc" -WhatIf
@@ -96,6 +97,8 @@ jobs:
     needs: [test-publish-psgallery-package]
     runs-on: ubuntu-latest
     steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
     - name: Download version.json
       uses: actions/download-artifact@v2
       with:
@@ -125,7 +128,6 @@ jobs:
       with:
         name: PSGallery-package
         path: ./out/
-    - uses: actions/checkout@v3
     - name: Create release
       id: draft_github_release
       uses: actions/create-release@v1
@@ -152,12 +154,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [draft-github-release]
     steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
         name: PSGallery-package
         path: ./out/
-    - uses: actions/checkout@v3
     - name: Publish to PSGallery
       env:
         NUGET_KEY: ${{ secrets.NUGET_KEY }}
@@ -168,6 +171,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [publish-psgallery-package]
     steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
     - name: Download version.json
       uses: actions/download-artifact@v2
       with:
@@ -197,7 +202,6 @@ jobs:
       with:
         name: PSGallery-package
         path: ./out/
-    - uses: actions/checkout@v3
     - name: Publish GitHub release
       id: publish_github_release
       uses: actions/create-release@v1
