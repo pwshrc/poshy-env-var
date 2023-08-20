@@ -25,8 +25,6 @@ jobs:
           Install-Module PSScriptAnalyzer -ErrorAction Stop
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Lint with PSScriptAnalyzer
         shell: pwsh
         run: ./scripts/lint.ps1 -NoFail
@@ -35,18 +33,22 @@ jobs:
     name: Determine Version with GitVersion
     runs-on: ubuntu-latest
     steps:
-    - name: Setup DotNet tool cache
+    - name: Cache dotnet tools
       id: cacher
       uses: actions/cache@v3
       with:
-        path: ~/.dotnet/tools
-        key: ${{ runner.os }}-GitVersionTool5latest
+        path: |
+          ${{ env.HOME }}/.dotnet/tools
+          ${{ env.USERPROFILE }}\\.dotnet\\tools
+        key: ${{ runner.os }}-dotnet-tools-${{ hashFiles('**/global.json') }}
     - name: dotnet tool install -g GitVersion.Tool
       if: steps.cacher.outputs.cache-hit != 'true'
       shell: pwsh
-      run: dotnet tool install --global GitVersion.Tool --version 5.*
+      run: dotnet tool install --global GitVersion.Tool --version 5.12
     - name: Check out repository code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # GitVersion requires the full history to calculate the version.
     - name: Show GitVersion configuration
       shell: pwsh
       run: dotnet-gitversion /showconfig
@@ -72,6 +74,7 @@ jobs:
         path: ./out/version.json
 
   create-releasenotes:
+    name: Create Release Notes
     needs: determine-version
     runs-on: ubuntu-latest
     steps:
@@ -79,7 +82,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: version.json
-        path: ./out
+        path: ./out/
     - name: Populate version variables
       id: gitversion_vars
       shell: pwsh
@@ -89,6 +92,8 @@ jobs:
           echo "::set-output name=$key::$($version.$key)"
         }
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # create-release-notes requires the full history to create the release notes.
     - name: Create release notes
       id: create_release_notes
       uses: johnyherangi/create-release-notes@main
@@ -134,8 +139,6 @@ jobs:
         path: ./out/
     - name: Check out repository code
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
     - name: Build PSGallery package
       shell: pwsh
       run: |
@@ -167,8 +170,6 @@ jobs:
         Install-Module Pester -ErrorAction Stop
     - name: Check out repository code
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
@@ -203,8 +204,6 @@ jobs:
         Install-Module Pester -ErrorAction Stop
     - name: Check out repository code
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
@@ -239,8 +238,6 @@ jobs:
         Install-Module Pester -ErrorAction Stop
     - name: Check out repository code
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
