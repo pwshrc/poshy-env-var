@@ -10,7 +10,6 @@ param(
     [string] $PackageVersionMajorMinorPatchBuild,
 
     [Parameter(Mandatory = $false)]
-    [ValidateNotNullOrEmpty()]
     [string] $PackageVersionPrereleaseTag,
 
     [Parameter(Mandatory = $true)]
