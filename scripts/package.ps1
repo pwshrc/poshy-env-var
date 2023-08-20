@@ -19,7 +19,7 @@ param(
 
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
-    [string] $Commitish
+    [string] $CommitSha
 )
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -62,7 +62,7 @@ Set-StrictMode -Version Latest
     -CompanyName $companyName `
     -Authors $authors `
     -GitRepositoryUrl $repositoryGitUrl `
-    -Commitish $Commitish `
+    -CommitSha $CommitSha `
     -ProjectUrl $projectUrl `
     -LicenseFileName $licenseFileName `
     -ReadmeFileName $readmeFileName `
@@ -84,7 +84,7 @@ Set-StrictMode -Version Latest
     -CompanyName $companyName `
     -Authors $authors `
     -GitRepositoryUrl $repositoryGitUrl `
-    -Commitish $Commitish `
+    -CommitSha $CommitSha `
     -ProjectUrl $projectUrl `
     -LicenseFileName $licenseFileName `
     -ReadmeFileName $readmeFileName `
