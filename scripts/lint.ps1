@@ -7,7 +7,7 @@ if (-not (Get-Command Invoke-ScriptAnalyzer -ErrorAction SilentlyContinue)) {
     throw "Invoke-ScriptAnalyzer not found. Please install the PowerShell module 'PSScriptAnalyzer'."
 }
 
-Invoke-ScriptAnalyzer -Path "$PSScriptRoot\..\*.ps1" -Recurse -ReportSummary -OutVariable issues
+Invoke-ScriptAnalyzer -Path "$PSScriptRoot\..\*.ps1","$PSScriptRoot\..\*.psm1" -Recurse -ReportSummary -OutVariable issues
 $errors   = $issues.Where({$_.Severity -eq 'Error'})
 $warnings = $issues.Where({$_.Severity -eq 'Warning'})
 if ($errors) {
