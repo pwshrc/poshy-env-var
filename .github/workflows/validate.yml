@@ -1,0 +1,184 @@
+name: Validate Changes
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-with-psscriptanalyzer:
+    name: Lint with PSScriptAnalyzer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup PowerShell module cache
+        id: cacher
+        uses: actions/cache@v3
+        with:
+          path: "~/.local/share/powershell/Modules"
+          key: ${{ runner.os }}-PSScriptAnalyzer
+      - name: Install Modules from PSGallery
+        if: steps.cacher.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -ErrorAction Stop
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Lint with PSScriptAnalyzer
+        shell: pwsh
+        run: ./scripts/lint.ps1
+
+  determine-version:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Setup DotNet tool cache
+      id: cacher
+      uses: actions/cache@v3
+      with:
+        path: ~/.dotnet/tools
+        key: ${{ runner.os }}-GitVersionTool5latest
+    - name: dotnet tool install -g GitVersion.Tool
+      if: steps.cacher.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        dotnet tool install --global GitVersion.Tool --version 5.*
+    - name: Determine version
+      shell: pwsh
+      run: |
+        dotnet-gitversion /output json > version.json
+    - name: Upload version.json
+      uses: actions/upload-artifact@v3
+      with:
+        name: version.json
+        path: version.json
+
+  build-release-package:
+    needs: [determine-version, lint-with-psscriptanalyzer]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download version.json
+      uses: actions/download-artifact@v2
+      with:
+        name: version.json
+    - name: Populate GitVersion variables
+      id: gitversion_vars
+      shell: pwsh
+      run: |
+        $version = Get-Content version.json | ConvertFrom-Json
+        foreach ($key in $version.PSObject.Properties.Name) {
+          echo "::set-output name=$key::$($version.$key)"
+        }
+    - name: Build PSGallery package
+      shell: pwsh
+      run: |
+        $version = Get-Content version.json | ConvertFrom-Json
+        ./scripts/package.ps1 -PackageVersion $version.NuGetVersionV2
+    - name: Upload PSGallery package
+      uses: actions/upload-artifact@v3
+      with:
+        name: PSGallery-package
+        path: ./out/*.nupkg
+
+  test-ubuntu-latest:
+    needs: build-release-package
+    name: Test with Pester on Ubuntu Latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup PowerShell module cache
+      id: cacher
+      uses: actions/cache@v3
+      with:
+        path: "~/.local/share/powershell/Modules"  # See: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-powershell#powershell-module-locations
+        key: ${{ runner.os }}-Pester
+    - name: Install Modules from PSGallery
+      if: steps.cacher.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        Set-PSRepository PSGallery -InstallationPolicy Trusted
+        Install-Module Pester -ErrorAction Stop
+    - name: Check out repository code
+      uses: actions/checkout@v3
+    - name: Download PSGallery package
+      uses: actions/download-artifact@v2
+      with:
+        name: PSGallery-package
+        path: ./out
+    - name: Test with Pester
+      shell: pwsh
+      run: ./scripts/test.ps1 -UsePackageExport
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests-ubuntu-latest
+        path: out/test-*.xml
+      if: ${{ always() }}
+
+  test-windows-latest:
+    needs: build-release-package
+    name: Test with Pester on Windows Latest
+    runs-on: windows-latest
+    steps:
+    - name: Setup PowerShell module cache
+      id: cacher
+      uses: actions/cache@v3
+      with:
+        path: "C:\\Users\\runneradmin\\Documents\\PowerShell\\Modules"  # See: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-powershell#powershell-module-locations
+        key: ${{ runner.os }}-Pester
+    - name: Install Modules from PSGallery
+      if: steps.cacher.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        Set-PSRepository PSGallery -InstallationPolicy Trusted
+        Install-Module Pester -ErrorAction Stop
+    - name: Check out repository code
+      uses: actions/checkout@v3
+    - name: Download PSGallery package
+      uses: actions/download-artifact@v2
+      with:
+        name: PSGallery-package
+        path: ./out
+    - name: Test with Pester
+      shell: pwsh
+      run: ./scripts/test.ps1 -UsePackageExport
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests-windows-latest
+        path: out/test-*.xml
+      if: ${{ always() }}
+
+  test-macos-latest:
+    needs: build-release-package
+    name: Test with Pester on MacOS Latest
+    runs-on: macos-latest
+    steps:
+    - name: Setup PowerShell module cache
+      id: cacher
+      uses: actions/cache@v3
+      with:
+        path: "/Users/runner/.local/share/powershell/Modules"  # See: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-powershell#powershell-module-locations
+        key: ${{ runner.os }}-Pester
+    - name: Install Modules from PSGallery
+      if: steps.cacher.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        Set-PSRepository PSGallery -InstallationPolicy Trusted
+        Install-Module Pester -ErrorAction Stop
+    - name: Check out repository code
+      uses: actions/checkout@v3
+    - name: Download PSGallery package
+      uses: actions/download-artifact@v2
+      with:
+        name: PSGallery-package
+        path: ./out
+    - name: Test with Pester
+      shell: pwsh
+      run: ./scripts/test.ps1 -UsePackageExport
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests-macos-latest
+        path: out/test-*.xml
+      if: ${{ always() }}
