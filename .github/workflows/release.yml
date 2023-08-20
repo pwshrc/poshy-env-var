@@ -105,7 +105,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content -Raw ./out/version.json -Encoding UTF8 | ConvertFrom-Json
+        $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
@@ -118,7 +118,7 @@ jobs:
       id: load_release_notes
       shell: pwsh
       run: |
-        $releaseNotes = (Get-Content -Raw ./out/release-notes.md -Encoding UTF8).Trim()
+        $releaseNotes = (Get-Content -Raw -Path ./out/release-notes.md -Encoding UTF8).Trim()
         echo "::set-output name=release_notes::$releaseNotes"
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
@@ -177,7 +177,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content ./out/version.json -Encoding UTF8 | ConvertFrom-Json
+        $version = Get-Content -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
