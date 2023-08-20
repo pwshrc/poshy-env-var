@@ -56,7 +56,7 @@ $pesterConfig = New-PesterConfiguration @{
 $ps = [System.IO.Path]::PathSeparator
 $Env:PSModulePath = "${newPsmodulePathEntry}${ps}$Env:PSModulePath"
 try {
-    Invoke-Pester -Configuration $pesterConfig | Format-Table -AutoSize
+    Invoke-Pester -Configuration $pesterConfig
 } finally {
     $Env:PSModulePath = $Env:PSModulePath.Replace("${newPsmodulePathEntry}${ps}", "")
     Remove-Item -Path Variable:"Global:SubjectModuleName" -Force -ErrorAction SilentlyContinue
