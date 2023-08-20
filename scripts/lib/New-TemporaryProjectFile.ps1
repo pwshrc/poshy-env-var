@@ -104,7 +104,7 @@ function New-TemporaryProjectFile {
         "Copyright" = $PackageCopyright
         "PackageTags" = ($PackageTags -join " ")
         "PackageRequireLicenseAcceptance" = "false"
-        "RestoreSources" = "`$(RestoreSources);${psgalleryNugetFeed}"
+        "AdditionalRestoreSources" = "`$(AdditionalRestoreSources);${psgalleryNugetFeed}"
     }
     if (-not [string]::IsNullOrWhiteSpace($ReleaseNotes)) {
         $properties["PackageReleaseNotes"] = $ReleaseNotes
