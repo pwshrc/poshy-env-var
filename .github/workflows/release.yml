@@ -1,0 +1,240 @@
+name: Release Changes
+
+on:
+  workflow_run:
+    workflows: ["Validate Changes"]
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  begin-release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - run: echo "Beginning release."
+      - name: 'Download artifacts from triggering workflow'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.payload.workflow_run.id,
+            });
+            let matchArtifacts = allArtifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == 'version.json' || artifact.name == 'PSGallery-package';
+            });
+            let downloads = matchArtifacts.map(async (artifact) => {
+              return await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+                archive_format: 'zip'
+              });
+            });
+            let download_all = await Promise.all(downloads);
+            let fs = require('fs');
+            downloads.forEach((download) => {
+              fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${download.data.name}.zip`, Buffer.from(download.data));
+            });
+      - name: Unzip version.json
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let fs = require('fs');
+            let unzip = require('unzipper');
+            fs.createReadStream(`${process.env.GITHUB_WORKSPACE}/version.json.zip`)
+              .pipe(unzip.Extract({ path: `${process.env.GITHUB_WORKSPACE}` }));
+      - name: Upload version.json
+        uses: actions/upload-artifact@v3
+        with:
+          name: version.json
+          path: version.json
+      - name: Unzip PSGallery-package
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let fs = require('fs');
+            let unzip = require('unzipper');
+            fs.createReadStream(`${process.env.GITHUB_WORKSPACE}/PSGallery-package.zip`)
+              .pipe(unzip.Extract({ path: `${process.env.GITHUB_WORKSPACE}/PSGallery-package` }));
+      - name: Upload PSGallery-package
+        uses: actions/upload-artifact@v3
+        with:
+          name: PSGallery-package
+          path: PSGallery-package
+
+  create-releasenotes:
+    needs: begin-release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download version.json
+      uses: actions/download-artifact@v2
+      with:
+        name: version.json
+    - name: Populate version variables
+      id: gitversion_vars
+      shell: pwsh
+      run: |
+        $version = Get-Content version.json | ConvertFrom-Json
+        foreach ($key in $version.PSObject.Properties.Name) {
+          echo "::set-output name=$key::$($version.$key)"
+        }
+    - uses: actions/checkout@v3
+    - name: Create release notes
+      id: create_release_notes
+      uses: johnyherangi/create-release-notes@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        head-ref: ${{ steps.gitversion_vars.outputs.VersionSourceSha }}
+    - name: Save release notes
+      shell: pwsh
+      env:
+        RELEASE_NOTES: ${{ steps.create_release_notes.outputs.release-notes }}
+      run: |
+        $releaseNotes = $env:RELEASE_NOTES
+        $releaseNotes | Out-File release-notes.md -Encoding utf8
+    - name: Upload release-notes.md
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-notes.md
+        path: release-notes.md
+
+  draft-github-release:
+    needs: [create-releasenotes]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download version.json
+      uses: actions/download-artifact@v2
+      with:
+        name: version.json
+    - name: Populate GitVersion variables
+      id: gitversion_vars
+      shell: pwsh
+      run: |
+        $version = Get-Content version.json | ConvertFrom-Json
+        foreach ($key in $version.PSObject.Properties.Name) {
+          echo "::set-output name=$key::$($version.$key)"
+        }
+    - name: Download release-notes.md
+      uses: actions/download-artifact@v2
+      with:
+        name: release-notes.md
+    - name: Load release notes
+      id: load_release_notes
+      shell: pwsh
+      run: |
+        $releaseNotes = Get-Content release-notes.md
+        echo "::set-output name=release-notes::$releaseNotes"
+    - name: Download PSGallery package
+      uses: actions/download-artifact@v2
+      with:
+        name: PSGallery-package
+    - uses: actions/checkout@v3
+    - name: Create release
+      id: draft_github_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
+        release_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
+        commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
+        body: "${{ steps.load_release_notes.outputs.release-notes }}"
+        draft: true
+        prerelease: false
+    - name: Upload release asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.draft_github_release.outputs.upload_url }}
+        asset_path: ./PSGallery-package/*.nupkg
+        asset_name: ${{ steps.gitversion_vars.outputs.NuGetVersionV2 }}.nupkg
+        asset_content_type: application/zip
+
+  publish-psgallery-package:
+    runs-on: ubuntu-latest
+    needs: [draft-github-release]
+    steps:
+    - name: Download version.json
+      uses: actions/download-artifact@v2
+      with:
+        name: version.json
+    - name: Populate GitVersion variables
+      id: gitversion_vars
+      shell: pwsh
+      run: |
+        $version = Get-Content version.json | ConvertFrom-Json
+        foreach ($key in $version.PSObject.Properties.Name) {
+          echo "::set-output name=$key::$($version.$key)"
+        }
+    - name: Download release-notes.md
+      uses: actions/download-artifact@v2
+      with:
+        name: release-notes.md
+    - name: Load release notes
+      id: load_release_notes
+      shell: pwsh
+      run: |
+        $releaseNotes = Get-Content release-notes.md
+        echo "::set-output name=release-notes::$releaseNotes"
+    - name: Download PSGallery package
+      uses: actions/download-artifact@v2
+      with:
+        name: PSGallery-package
+    - uses: actions/checkout@v3
+    - name: Publish to PSGallery
+      env:
+        NUGET_KEY: ${{ secrets.NUGET_KEY }}
+        PACKAGE_VERSION: ${{ steps.gitversion_vars.outputs.NuGetVersionV2 }}
+        RELEASE_NOTES: ${{ steps.load_release_notes.outputs.release-notes }}
+      shell: pwsh
+      run: |
+        ./build/publish.ps1 -NuGetKey "$env:NUGET_KEY" -PackageVersion "$Env:PACKAGE_VERSION" -ReleaseNotes "$env:RELEASE_NOTES"
+
+  publish-github-release:
+    runs-on: ubuntu-latest
+    needs: [publish-psgallery-package]
+    steps:
+    - name: Download version.json
+      uses: actions/download-artifact@v2
+      with:
+        name: version.json
+    - name: Populate GitVersion variables
+      id: gitversion_vars
+      shell: pwsh
+      run: |
+        $version = Get-Content version.json | ConvertFrom-Json
+        foreach ($key in $version.PSObject.Properties.Name) {
+          echo "::set-output name=$key::$($version.$key)"
+        }
+    - name: Download release-notes.md
+      uses: actions/download-artifact@v2
+      with:
+        name: release-notes.md
+    - name: Load release notes
+      id: load_release_notes
+      shell: pwsh
+      run: |
+        $releaseNotes = Get-Content release-notes.md
+        echo "::set-output name=release-notes::$releaseNotes"
+    - name: Download PSGallery package
+      uses: actions/download-artifact@v2
+      with:
+        name: PSGallery-package
+    - uses: actions/checkout@v3
+    - name: Publish GitHub release
+      id: publish_github_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
+        release_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
+        commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
+        body: "${{ steps.load_release_notes.outputs.release-notes }}"
+        draft: false
+        prerelease: false
