@@ -53,12 +53,12 @@ jobs:
     - name: Capture GitVersion configuration
       shell: pwsh
       run: |
-        mkdir ./out -Force | Out-Null
-        dotnet-gitversion /showconfig > ./out/GitVersion.effective.yml
+        New-Item -Path ./out -Type Directory -Force | Out-Null
+        dotnet-gitversion /showconfig | Out-File -Path ./out/GitVersion.effective.yml -Encoding UTF8
     - name: Determine version
       shell: pwsh
       run: |
-        dotnet-gitversion /output json > ./out/version.json
+        dotnet-gitversion /output json | Out-File -Path ./out/version.json -Encoding UTF8
         [int] $gitversionExitCode = $LASTEXITCODE
         if ($gitversionExitCode -ne 0) {
           Write-Host "GitVersion failed. Re-running with diagnostic verbosity."
