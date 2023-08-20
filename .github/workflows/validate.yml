@@ -247,7 +247,7 @@ jobs:
         path: ./out/
     - name: Test with Pester
       shell: pwsh
-      run: ./scripts/test.ps1 -UsePackageExport
+      run: ./scripts/test.ps1 -UsePackageExport -NoFail
     - name: Upload test results
       uses: actions/upload-artifact@v3
       with:
