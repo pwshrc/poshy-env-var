@@ -33,7 +33,6 @@ jobs:
 
   determine-version:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
     - name: Setup DotNet tool cache
       id: cacher
@@ -44,14 +43,12 @@ jobs:
     - name: dotnet tool install -g GitVersion.Tool
       if: steps.cacher.outputs.cache-hit != 'true'
       shell: pwsh
-      run: |
-        dotnet tool install --global GitVersion.Tool --version 5.*
+      run: dotnet tool install --global GitVersion.Tool --version 5.*
     - name: Check out repository code
       uses: actions/checkout@v3
     - name: Determine version
       shell: pwsh
-      run: |
-        dotnet-gitversion /output json > version.json
+      run: dotnet-gitversion /output json > version.json
     - name: Upload version.json
       uses: actions/upload-artifact@v3
       with:
