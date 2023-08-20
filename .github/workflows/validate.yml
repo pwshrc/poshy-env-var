@@ -146,7 +146,7 @@ jobs:
       run: |
         $releaseNotes = (Get-Content -Raw -Path ./out/release-notes.md -Encoding UTF8).Trim()
         $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
-        ./scripts/package.ps1 -PackageVersionNuGet $version.NuGetVersionV2 -PackageVersionMajorMinorPatchBuild $version.AssemblySemVer -PackageVersionMajorMinorPatch $version.MajorMinorPatch -PackageVersionPrereleaseTag $version.PrereleaseTag -ReleaseNotes $releaseNotes -CommitSha $version.Sha
+        ./scripts/package.ps1 -PackageVersionNuGet $version.NuGetVersionV2 -PackageVersionMajorMinorPatchBuild $version.AssemblySemVer -PackageVersionPrereleaseTag $version.PrereleaseTag -ReleaseNotes $releaseNotes -CommitSha $version.Sha
     - name: Upload PSGallery package
       uses: actions/upload-artifact@v3
       with:
