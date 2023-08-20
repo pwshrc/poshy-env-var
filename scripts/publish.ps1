@@ -1,5 +1,9 @@
 #!/usr/bin/env pwsh
 param(
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string] $NUGET_KEY,
+
     [switch] $WhatIf
 )
 $ErrorActionPreference = "Stop"
@@ -26,7 +30,7 @@ Move-Item -Path $package_expanded -Destination $psd1.BaseName -Force | Out-Null
 
 Publish-Module `
     -Path $psd1.BaseName `
-    -NuGetApiKey $env:NUGET_KEY `
+    -NuGetApiKey $NUGET_KEY `
     -ReleaseNotes $psd1_data.PrivateData.PSData.ReleaseNotes `
     -Tags $psd1_data.PrivateData.PSData.Tags `
     -LicenseUri $psd1_data.PrivateData.PSData.LicenseUri `
