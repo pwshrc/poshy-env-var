@@ -23,7 +23,7 @@ function New-ModuleManifestCustomized {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string] $Commitish,
+        [string] $CommitSha,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -62,12 +62,11 @@ function New-ModuleManifestCustomized {
         [string] $PackageVersionMajorMinorPatchBuild,
 
         [Parameter(Mandatory = $false)]
-        [ValidateNotNullOrEmpty()]
         [string] $PackageVersionPrereleaseTag,
 
         [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string] $ProjectUrlAtVersion = $ProjectUrl + "/tree/${Commitish}",
+        [string] $ProjectUrlAtVersion = $ProjectUrl + "/tree/${CommitSha}",
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

@@ -12,7 +12,7 @@ function Get-PackageCopyright {
     if (-not (Test-Path -Path $LicenseFilePath -ErrorAction SilentlyContinue)) {
         throw "The file '${LicenseFilePath}' does not exist."
     }
-    [string] $copyright = ((Get-Content -Path $LicenseFilePath -Encoding utf8 |
+    [string] $copyright = ((Get-Content -Path $LicenseFilePath -Encoding UTF8 |
         Where-Object { $_ -match "(\(c\)|©️)" } |
         ForEach-Object { $_.Trim().TrimEnd(",").TrimEnd(";").TrimEnd(".") }
     ) -join "; "+[Environment]::NewLine)

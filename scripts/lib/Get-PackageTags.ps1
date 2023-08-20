@@ -41,7 +41,7 @@ function Get-PackageTags {
     if (-not (Test-Path $tagsFile -ErrorAction SilentlyContinue)) {
         throw "The file '${tagsFile}' does not exist."
     }
-    [string[]] $tags = ((Get-Content -Path $tagsFile -Encoding utf8 | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrEmpty($_) }))
+    [string[]] $tags = ((Get-Content -Path $tagsFile -Encoding UTF8 | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrEmpty($_) }))
 
     if (-not $PSGalleryExtended) {
         if (-not $tags) {

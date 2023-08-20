@@ -28,7 +28,7 @@ function New-TemporaryProjectFile {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string] $Commitish,
+        [string] $CommitSha,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -94,7 +94,7 @@ function New-TemporaryProjectFile {
         "Authors" = ($Authors -join "; ")
         "RepositoryUrl" = $GitRepositoryUrl
         "RepositoryType" = "git"
-        "RepositoryCommit" = $Commitish
+        "RepositoryCommit" = $CommitSha
         "PackageProjectUrl" = $ProjectUrl
         "PackageLicenseFile" = $LicenseFileName
         "PackageReadmeFile" = $ReadmeFileName
