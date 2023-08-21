@@ -23,6 +23,10 @@ if ($UsePackageExport) {
     [System.IO.FileInfo[]] $psgallery_nupkg = @(Get-ChildItem -Path "${PSScriptRoot}${ds}..${ds}out" -Filter "*.nupkg" -Recurse -File -Force)
     if (-not $psgallery_nupkg) {
         throw "No NuGet packages were found in '${PSScriptRoot}${ds}..${ds}out'."
+    } elseif ($psgallery_nupkg.Count -gt 1) {
+        throw "Multiple NuGet packages were found in '${PSScriptRoot}${ds}..${ds}out'. Did you forget to clean?"
+    } else {
+        Write-Host "Using NuGet package '${psgallery_nupkg[0].FullName}'."
     }
     [string] $package_expanded = "${PSScriptRoot}${ds}..${ds}out${ds}$($psgallery_nupkg[0].BaseName)"
     Expand-Archive -Path $psgallery_nupkg[0].FullName -DestinationPath $package_expanded -Force | Out-Null
@@ -54,7 +58,9 @@ $pesterConfig = New-PesterConfiguration @{
 }
 
 $ps = [System.IO.Path]::PathSeparator
+Write-Host "Adding '$newPsmodulePathEntry' to '`$Env:PSModulePath'."
 $Env:PSModulePath = "${newPsmodulePathEntry}${ps}$Env:PSModulePath"
+Write-Host "`$Env:PSModulePath: $Env:PSModulePath"
 try {
     Invoke-Pester -Configuration $pesterConfig
 } finally {
