@@ -23,7 +23,7 @@ else {
 [string] $PackageVersionPrereleaseTag = $versionInfo | Select-Object -ExpandProperty PreReleaseTag
 [string] $PackageVersionMajorMinorPatchBuild = $versionInfo | Select-Object -ExpandProperty AssemblySemVer
 [string] $ReleaseNotes = "Fake Release Notes"
-[string] $Commitish = $versionInfo | Select-Object -ExpandProperty Sha
+[string] $CommitSha = $versionInfo | Select-Object -ExpandProperty Sha
 
 if (-not $PackageVersionPrereleaseTag) {
     $PackageVersionNuGet += "-dev"
@@ -39,4 +39,4 @@ $ds = [System.IO.Path]::DirectorySeparatorChar
     -PackageVersionMajorMinorPatchBuild $PackageVersionMajorMinorPatchBuild `
     -PackageVersionPrereleaseTag $PackageVersionPrereleaseTag `
     -ReleaseNotes $ReleaseNotes `
-    -Commitish $Commitish
+    -CommitSha $CommitSha
