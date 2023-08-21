@@ -75,11 +75,15 @@ jobs:
       with:
         name: PSGallery-package
         path: ./out/
-    - name: Publish to PSGallery (WhatIf)
+    - name: Publish Prerelease to PSGallery (WhatIf)
+      if: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
       shell: pwsh
-      env:
-        prerelease: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
-      run: ./scripts/publish.ps1 -NUGET_KEY "abc" -Prerelease:([bool]$Env:prerelease) -WhatIf
+      run: ./scripts/publish.ps1 -NUGET_KEY "abc" -Prerelease -WhatIf
+    - name: Publish Release to PSGallery (WhatIf)
+      if: "${{ steps.gitversion_vars.outputs.PreReleaseTag == '' }}"
+      shell: pwsh
+      run: ./scripts/publish.ps1 -NUGET_KEY "abc" -WhatIf
+
 
   draft-github-release:
     needs: [test-publish-psgallery-package]
@@ -162,12 +166,18 @@ jobs:
       with:
         name: PSGallery-package
         path: ./out/
-    - name: Publish to PSGallery
+    - name: Publish Prerelease to PSGallery
+      if: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
+      shell: pwsh
       env:
         NUGET_KEY: ${{ secrets.NUGET_KEY }}
-        prerelease: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
+      run: ./scripts/publish.ps1 -NUGET_KEY "$env:NUGET_KEY" -Prerelease
+    - name: Publish Release to PSGallery
+      if: "${{ steps.gitversion_vars.outputs.PreReleaseTag == '' }}"
       shell: pwsh
-      run: ./scripts/publish.ps1 -NUGET_KEY "$env:NUGET_KEY" -Prerelease:([bool]$Env:prerelease)
+      env:
+        NUGET_KEY: ${{ secrets.NUGET_KEY }}
+      run: ./scripts/publish.ps1 -NUGET_KEY "$env:NUGET_KEY"
 
   publish-github-release:
     runs-on: ubuntu-latest
