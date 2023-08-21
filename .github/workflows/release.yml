@@ -77,7 +77,7 @@ jobs:
         path: ./out/
     - name: Publish to PSGallery
       shell: pwsh
-      run: ./build/publish.ps1 -NUGET_KEY "abc" -WhatIf
+      run: ./scripts/publish.ps1 -NUGET_KEY "abc" -WhatIf
 
   draft-github-release:
     needs: [test-publish-psgallery-package]
@@ -151,7 +151,7 @@ jobs:
       env:
         NUGET_KEY: ${{ secrets.NUGET_KEY }}
       shell: pwsh
-      run: ./build/publish.ps1 -NUGET_KEY "$env:NUGET_KEY"
+      run: ./scripts/publish.ps1 -NUGET_KEY "$env:NUGET_KEY"
 
   publish-github-release:
     runs-on: ubuntu-latest
