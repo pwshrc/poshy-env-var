@@ -97,15 +97,17 @@ jobs:
         }
     - name: Create release notes
       id: create_release_notes
-      uses: johnyherangi/create-release-notes@main
+      uses: mikepenz/release-changelog-builder-action@v4.0.0-rc08
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        head-ref: ${{ steps.gitversion_vars.outputs.VersionSourceSha }}
+        fromTag: ${{ steps.gitversion_vars.outputs.VersionSourceSha }}
+        toTag: ${{ steps.gitversion_vars.outputs.Sha }}
+        commitMode: true
     - name: Save release notes
       shell: pwsh
       env:
-        RELEASE_NOTES: ${{ steps.create_release_notes.outputs.release-notes }}
+        RELEASE_NOTES: ${{ steps.create_release_notes.outputs.changelog }}
       run: |
         $releaseNotes = ($env:RELEASE_NOTES).Trim()
         New-Item -Path ./out -Type Directory -Force | Out-Null
