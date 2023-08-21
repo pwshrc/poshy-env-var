@@ -34,6 +34,7 @@ if ($UsePackageExport) {
     }
     $module_location = "${out}${ds}${psgallery_nupkg_name}"
     Expand-Archive -Path $psgallery_nupkg_fullname -DestinationPath $module_location -Force | Out-Null
+    $module_location = Resolve-Path -Path $module_location
     [System.IO.FileInfo] $psd1 = Get-ChildItem -Path $module_location -Filter "*.psd1" -Recurse -File -Force
     [string] $new_module_location = Join-Path $out $psd1.BaseName
     Move-Item -Path $module_location -Destination $new_module_location -Force | Out-Null
