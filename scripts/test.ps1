@@ -24,13 +24,13 @@ if ($UsePackageExport) {
     [string] $psgallery_nupkg_fullname = $null
     [System.IO.FileInfo[]] $psgallery_nupkg = @(Get-ChildItem -Path $out -Filter "*.nupkg" -Recurse -File -Force)
     if ($psgallery_nupkg.Count -eq 0) {
-        throw "No NuGet packages were found in '$out'."
+        throw "No NuGet packages were found in ``$out``."
     } elseif ($psgallery_nupkg.Count -gt 1) {
-        throw "Multiple NuGet packages were found in '$out'. Did you forget to clean?"
+        throw "Multiple NuGet packages were found in ``$out``. Did you forget to clean?"
     } else {
         $psgallery_nupkg_name = $psgallery_nupkg[0].BaseName
         $psgallery_nupkg_fullname = $psgallery_nupkg[0].FullName
-        Write-Host "Using NuGet package '$psgallery_nupkg_fullname'."
+        Write-Host "Using NuGet package ``$psgallery_nupkg_fullname``."
     }
     $module_location = "${out}${ds}${psgallery_nupkg_name}"
     Expand-Archive -Path $psgallery_nupkg_fullname -DestinationPath $module_location -Force | Out-Null
@@ -46,7 +46,7 @@ if ($UsePackageExport) {
     $module_location = "${PSScriptRoot}${ds}..${ds}src"
 }
 [string] $moduleName = Get-ChildItem -Path $module_location -Filter *.psm1 -Recurse -File -Force | Select-Object -First 1 -ExpandProperty BaseName
-Write-Host "Setting '`$Global:SubjectModuleName' to '$moduleName'."
+Write-Host "Setting ```$Global:SubjectModuleName`` to ``$moduleName``."
 New-Item -Path Variable:"Global:SubjectModuleName" -Value $moduleName -Force | Out-Null
 
 $pesterConfig = New-PesterConfiguration @{
@@ -70,10 +70,9 @@ $pesterConfig = New-PesterConfiguration @{
 }
 
 [string] $ps = [System.IO.Path]::PathSeparator
-Write-Host "Setting '`$Env:PSModulePath' to only point at '$module_location'."
+Write-Host "Setting ```$Env:PSModulePath`` to only point at ``$module_location``'s parent folder."
 [string] $OldPSModulePath = $Env:PSModulePath
-$Env:PSModulePath = "${module_location}"
-Get-ChildItem -Path $module_location -Recurse -Force
+$Env:PSModulePath = Split-Path -Path $module_location -Parent
 try {
     Invoke-Pester -Configuration $pesterConfig
 } finally {
