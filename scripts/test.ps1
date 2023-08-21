@@ -20,7 +20,7 @@ if (-not (Get-Command Invoke-Pester -ErrorAction SilentlyContinue)) {
 [string] $newPsmodulePathEntry = $null
 if ($UsePackageExport) {
     $ds = [System.IO.Path]::DirectorySeparatorChar
-    [System.IO.FileInfo[]] $psgallery_nupkg = Get-ChildItem -Path "${PSScriptRoot}${ds}..${ds}out" -Filter "*.nupkg" -Recurse -File -Force -ErrorAction SilentlyContinue
+    [System.IO.FileInfo[]] $psgallery_nupkg = @(Get-ChildItem -Path "${PSScriptRoot}${ds}..${ds}out" -Filter "*.nupkg" -Recurse -File -Force)
     if (-not $psgallery_nupkg) {
         throw "No NuGet packages were found in '${PSScriptRoot}${ds}..${ds}out'."
     }
