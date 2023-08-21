@@ -37,6 +37,9 @@ if ($UsePackageExport) {
     $module_location = Resolve-Path -Path $module_location
     [System.IO.FileInfo] $psd1 = Get-ChildItem -Path $module_location -Filter "*.psd1" -Recurse -File -Force
     [string] $new_module_location = Join-Path $out $psd1.BaseName
+    if (Test-Path $new_module_location -ErrorAction SilentlyContinue) {
+        Remove-Item -Path $new_module_location -Recurse -Force | Out-Null
+    }
     Move-Item -Path $module_location -Destination $new_module_location -Force | Out-Null
     $module_location = $new_module_location
 } else {
