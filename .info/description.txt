@@ -1,1 +1,1 @@
-Ergonomic cmdlets for environment-variable manipulation.
+Ergonomic cmdlets for getting, setting, and removing environment variables.
