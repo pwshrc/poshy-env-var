@@ -1,1 +1,1 @@
-A cool package
+Ergonomic cmdlets for environment-variable manipulation.
