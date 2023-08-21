@@ -75,9 +75,11 @@ jobs:
       with:
         name: PSGallery-package
         path: ./out/
-    - name: Publish to PSGallery
+    - name: Publish to PSGallery (WhatIf)
       shell: pwsh
-      run: ./scripts/publish.ps1 -NUGET_KEY "abc" -WhatIf
+      env:
+        prerelease: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
+      run: ./scripts/publish.ps1 -NUGET_KEY "abc" -Prerelease:([bool]$Env:prerelease) -WhatIf
 
   draft-github-release:
     needs: [test-publish-psgallery-package]
@@ -142,6 +144,19 @@ jobs:
     steps:
     - name: Check out repository code
       uses: actions/checkout@v3
+    - name: Download version.json
+      uses: actions/download-artifact@v2
+      with:
+        name: version.json
+        path: ./out/
+    - name: Populate GitVersion variables
+      id: gitversion_vars
+      shell: pwsh
+      run: |
+        $version = Get-Content -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
+        foreach ($key in $version.PSObject.Properties.Name) {
+          echo "::set-output name=$key::$($version.$key)"
+        }
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
@@ -150,8 +165,9 @@ jobs:
     - name: Publish to PSGallery
       env:
         NUGET_KEY: ${{ secrets.NUGET_KEY }}
+        prerelease: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
       shell: pwsh
-      run: ./scripts/publish.ps1 -NUGET_KEY "$env:NUGET_KEY"
+      run: ./scripts/publish.ps1 -NUGET_KEY "$env:NUGET_KEY" -Prerelease:([bool]$Env:prerelease)
 
   publish-github-release:
     runs-on: ubuntu-latest
