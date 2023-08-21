@@ -46,7 +46,6 @@ Set-StrictMode -Version Latest
 [hashtable] $moduleExports = Get-ModuleExports -Psm1Path "${PSScriptRoot}${ds}..${ds}src${ds}${PackageId}.psm1"
 
 . "${PSScriptRoot}${ds}lib${ds}Get-PackageTags.ps1"
-[string[]] $packageTagsConstrained = Get-PackageTags -PackageId $PackageId
 [string[]] $packageTagsExtended = Get-PackageTags -PackageId $PackageId -PSGalleryExtended -ModuleExports $moduleExports -PSEdition_Desktop:$PSEdition_Desktop -PSEdition_Core:$PSEdition_Core
 
 . "${PSScriptRoot}${ds}lib${ds}Get-PackageCopyright.ps1"
@@ -68,7 +67,7 @@ Set-StrictMode -Version Latest
     -PackageIconUrl $packageIconUrl `
     -PackageDescription $packageDescription `
     -PackageCopyright $packageCopyright `
-    -PackageTags $packageTagsConstrained `
+    -PackageTags $packageTagsExtended `
     -ReleaseNotes $ReleaseNotes `
     -PackageVersionMajorMinorPatchBuild $PackageVersionMajorMinorPatchBuild `
     -PackageVersionPrereleaseTag $PackageVersionPrereleaseTag `
