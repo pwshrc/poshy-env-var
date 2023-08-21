@@ -84,55 +84,9 @@ jobs:
       shell: pwsh
       run: ./scripts/publish.ps1 -NUGET_KEY "abc" -WhatIf
 
-
-  draft-github-release:
-    needs: [test-publish-psgallery-package]
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out repository code
-      uses: actions/checkout@v3
-    - name: Download version.json
-      uses: actions/download-artifact@v2
-      with:
-        name: version.json
-        path: ./out/
-    - name: Populate GitVersion variables
-      id: gitversion_vars
-      shell: pwsh
-      run: |
-        [object] $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
-        foreach ($key in $version.PSObject.Properties.Name) {
-          echo "::set-output name=$key::$($version.$key)"
-        }
-    - name: Download release-notes.md
-      uses: actions/download-artifact@v2
-      with:
-        name: release-notes.md
-        path: ./out/
-    - name: Download PSGallery package
-      uses: actions/download-artifact@v2
-      with:
-        name: PSGallery-package
-        path: ./out/
-    - name: Create release
-      id: draft_github_release
-      uses: softprops/action-gh-release@v1
-      with:
-        token: "${{ secrets.RELEASE_GITHUB_TOKEN }}"
-        name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
-        tag_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
-        target_commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
-        generate_release_notes: false
-        body_path: ./out/release-notes.md
-        prerelease: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
-        draft: true
-        files: |
-          ./out/*.nupkg
-        fail_on_unmatched_files: true
-
   publish-psgallery-package:
     runs-on: ubuntu-latest
-    needs: [draft-github-release]
+    needs: [test-publish-psgallery-package]
     steps:
     - name: Check out repository code
       uses: actions/checkout@v3
@@ -201,10 +155,13 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         token: "${{ secrets.RELEASE_GITHUB_TOKEN }}"
-        name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
-        tag_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
+        name: "v${{ steps.gitversion_vars.outputs.SemVer }}"
+        tag_name: "v${{ steps.gitversion_vars.outputs.SemVer }}"
         target_commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
         generate_release_notes: false
         body_path: ./out/release-notes.md
         prerelease: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
         draft: false
+        files: |
+          ./out/*.nupkg
+        fail_on_unmatched_files: true
