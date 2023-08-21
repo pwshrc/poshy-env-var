@@ -4,6 +4,8 @@ param(
     [ValidateNotNullOrEmpty()]
     [string] $NUGET_KEY,
 
+    [switch] $Prerelease,
+
     [switch] $WhatIf
 )
 $ErrorActionPreference = "Stop"
@@ -24,25 +26,27 @@ if ($psgallery_nupkg.Count -eq 0) {
     $psgallery_nupkg_fullname = $psgallery_nupkg[0].FullName
     Write-Host "Using NuGet package '$psgallery_nupkg_fullname'."
 }
-$module_location = "${out}${ds}${psgallery_nupkg_name}"
+[string] $module_location = "${out}${ds}${psgallery_nupkg_name}"
 if (Test-Path $module_location -ErrorAction SilentlyContinue) {
     throw "The directory '${module_location}' already exists. Did you forget to clean?"
 }
 Expand-Archive -Path $psgallery_nupkg_fullname -DestinationPath $module_location -Force | Out-Null
 $module_location = Resolve-Path -Path $module_location
-[System.IO.FileInfo] $psd1 = Get-ChildItem -Path $module_location -Filter "*.psd1" -Recurse -File -Force
+[System.IO.FileInfo] $psd1 = Get-ChildItem -Path $module_location -Filter "*.psd1" -Recurse -File -Force | Select-Object -First 1
 [hashtable] $psd1_data = Import-PowerShellDataFile -Path $psd1[0].FullName
 [string] $new_module_location = Join-Path $out $psd1.BaseName
 Move-Item -Path $module_location -Destination $new_module_location -Force | Out-Null
 $module_location = $new_module_location
+[System.IO.FileInfo] $psm1 = Get-ChildItem -Path $module_location -Filter "*.psm1" -Recurse -File -Force | Select-Object -First 1
 
 
 Publish-Module `
-    -Path $psd1.BaseName `
+    -Path $psm1.FullName `
     -NuGetApiKey $NUGET_KEY `
     -ReleaseNotes $psd1_data.PrivateData.PSData.ReleaseNotes `
     -Tags $psd1_data.PrivateData.PSData.Tags `
     -LicenseUri $psd1_data.PrivateData.PSData.LicenseUri `
     -IconUri $psd1_data.PrivateData.PSData.IconUri `
     -ProjectUri $psd1_data.PrivateData.PSData.ProjectUri `
+    -AllowPrerelease:$Prerelease `
     -WhatIf:$WhatIf
