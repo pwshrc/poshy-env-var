@@ -29,6 +29,7 @@ if (Test-Path $module_location -ErrorAction SilentlyContinue) {
     throw "The directory '${module_location}' already exists. Did you forget to clean?"
 }
 Expand-Archive -Path $psgallery_nupkg_fullname -DestinationPath $module_location -Force | Out-Null
+$module_location = Resolve-Path -Path $module_location
 [System.IO.FileInfo] $psd1 = Get-ChildItem -Path $module_location -Filter "*.psd1" -Recurse -File -Force
 [hashtable] $psd1_data = Import-PowerShellDataFile -Path $psd1[0].FullName
 [string] $new_module_location = Join-Path $out $psd1.BaseName
