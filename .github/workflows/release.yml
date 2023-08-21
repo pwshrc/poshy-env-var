@@ -126,7 +126,7 @@ jobs:
         prerelease: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
         draft: true
         files: |
-          ./out/PSGallery-package/*.nupkg
+          ./out/*.nupkg
         fail_on_unmatched_files: true
 
   publish-psgallery-package:
