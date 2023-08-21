@@ -25,18 +25,19 @@ jobs:
             let matchArtifacts = allArtifacts.data.artifacts.filter((artifact) => {
               return artifact.name == 'version.json' || artifact.name == 'PSGallery-package' || artifact.name == 'release-notes.md';
             });
-            let downloads = matchArtifacts.map(async (artifact) => {
-              return await github.rest.actions.downloadArtifact({
+            let downloadsPromises = matchArtifacts.map(async (artifact) => {
+              var blob = await github.rest.actions.downloadArtifact({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 artifact_id: artifact.id,
                 archive_format: 'zip'
               });
+              return { name: artifact.name, data: blob.data }
             });
-            let download_all = await Promise.all(downloads);
+            let downloads = await Promise.all(downloadsPromises);
             let fs = require('fs');
             downloads.forEach((download) => {
-              fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${download.data.name}.zip`, Buffer.from(download.data));
+              fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${download.name}.zip`, Buffer.from(download.data));
             });
       - name: Unzip version.json
         uses: actions/github-script@v6
