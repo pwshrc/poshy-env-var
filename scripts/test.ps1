@@ -19,7 +19,7 @@ if (-not (Get-Command Invoke-Pester -ErrorAction SilentlyContinue)) {
 [string] $ds = [System.IO.Path]::DirectorySeparatorChar
 [string] $out = "${PSScriptRoot}${ds}..${ds}out"
 [string] $psgallery_nupkg_name = $null
-[string] $newPsmodulePathEntry = $null
+[string] $module_location = $null
 if ($UsePackageExport) {
     [string] $psgallery_nupkg_fullname = $null
     [System.IO.FileInfo[]] $psgallery_nupkg = @(Get-ChildItem -Path $out -Filter "*.nupkg" -Recurse -File -Force)
@@ -32,13 +32,16 @@ if ($UsePackageExport) {
         $psgallery_nupkg_fullname = $psgallery_nupkg[0].FullName
         Write-Host "Using NuGet package '$psgallery_nupkg_fullname'."
     }
-    [string] $package_expanded = "${out}${ds}${psgallery_nupkg_name}"
-    Expand-Archive -Path $psgallery_nupkg_fullname -DestinationPath $package_expanded -Force | Out-Null
-    $newPsmodulePathEntry = $package_expanded
+    $module_location = "${out}${ds}${psgallery_nupkg_name}"
+    Expand-Archive -Path $psgallery_nupkg_fullname -DestinationPath $module_location -Force | Out-Null
+    [System.IO.FileInfo] $psd1 = Get-ChildItem -Path $module_location -Filter "*.psd1" -Recurse -File -Force | Out-Null
+    [string] $new_module_location = Join-Path $out $psd1.BaseName
+    Move-Item -Path $module_location -Destination $new_module_location -Force | Out-Null
+    $module_location = $new_module_location
 } else {
-    $newPsmodulePathEntry = "${PSScriptRoot}${ds}..${ds}src"
+    $module_location = "${PSScriptRoot}${ds}..${ds}src"
 }
-[string] $moduleName = Get-ChildItem -Path $newPsmodulePathEntry -Filter *.psm1 -Recurse -File -Force | Select-Object -First 1 -ExpandProperty BaseName
+[string] $moduleName = Get-ChildItem -Path $module_location -Filter *.psm1 -Recurse -File -Force | Select-Object -First 1 -ExpandProperty BaseName
 New-Item -Path Variable:"Global:SubjectModuleName" -Value $moduleName -Force | Out-Null
 
 $pesterConfig = New-PesterConfiguration @{
@@ -56,18 +59,18 @@ $pesterConfig = New-PesterConfiguration @{
         Enabled = $true
         OutputPath = "${out}${ds}test-coverage.xml"
         OutputFormat = "JaCoCo"
-        Path = $newPsmodulePathEntry
+        Path = $module_location
         RecursePaths = $true
     }
 }
 
 [string] $ps = [System.IO.Path]::PathSeparator
-Write-Host "Adding '$newPsmodulePathEntry' to '`$Env:PSModulePath'."
-$Env:PSModulePath = "${newPsmodulePathEntry}${ps}$Env:PSModulePath"
+Write-Host "Adding '$module_location' to '`$Env:PSModulePath'."
+$Env:PSModulePath = "${module_location}${ps}$Env:PSModulePath"
 Write-Host "`$Env:PSModulePath: $Env:PSModulePath"
 try {
     Invoke-Pester -Configuration $pesterConfig
 } finally {
-    $Env:PSModulePath = $Env:PSModulePath.Replace("${newPsmodulePathEntry}${ps}", "")
+    $Env:PSModulePath = $Env:PSModulePath.Replace("${module_location}${ps}", "")
     Remove-Item -Path Variable:"Global:SubjectModuleName" -Force -ErrorAction SilentlyContinue
 }
