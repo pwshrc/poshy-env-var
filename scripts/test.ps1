@@ -67,13 +67,13 @@ $pesterConfig = New-PesterConfiguration @{
 }
 
 [string] $ps = [System.IO.Path]::PathSeparator
-Write-Host "Adding '$module_location' to '`$Env:PSModulePath'."
-$Env:PSModulePath = "${module_location}${ps}$Env:PSModulePath"
-Write-Host "Here's what's in '$module_location':"
+Write-Host "Setting '`$Env:PSModulePath' to only point at '$module_location'."
+[string] $OldPSModulePath = $Env:PSModulePath
+$Env:PSModulePath = "${module_location}"
 Get-ChildItem -Path $module_location -Recurse -Force
 try {
     Invoke-Pester -Configuration $pesterConfig
 } finally {
-    $Env:PSModulePath = $Env:PSModulePath.Replace("${module_location}${ps}", "")
+    $Env:PSModulePath = $OldPSModulePath
     Remove-Item -Path Variable:"Global:SubjectModuleName" -Force -ErrorAction SilentlyContinue
 }
