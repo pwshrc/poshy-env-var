@@ -43,6 +43,7 @@ if ($UsePackageExport) {
     $module_location = "${PSScriptRoot}${ds}..${ds}src"
 }
 [string] $moduleName = Get-ChildItem -Path $module_location -Filter *.psm1 -Recurse -File -Force | Select-Object -First 1 -ExpandProperty BaseName
+Write-Host "Setting '`$Global:SubjectModuleName' to '$moduleName'."
 New-Item -Path Variable:"Global:SubjectModuleName" -Value $moduleName -Force | Out-Null
 
 $pesterConfig = New-PesterConfiguration @{
@@ -68,7 +69,8 @@ $pesterConfig = New-PesterConfiguration @{
 [string] $ps = [System.IO.Path]::PathSeparator
 Write-Host "Adding '$module_location' to '`$Env:PSModulePath'."
 $Env:PSModulePath = "${module_location}${ps}$Env:PSModulePath"
-Write-Host "`$Env:PSModulePath: $Env:PSModulePath"
+Write-Host "Here's what's in '$module_location':"
+Get-ChildItem -Path $module_location -Recurse -Force
 try {
     Invoke-Pester -Configuration $pesterConfig
 } finally {
