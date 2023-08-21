@@ -16,20 +16,24 @@ Set-StrictMode -Version Latest
 if (-not (Get-Command Invoke-Pester -ErrorAction SilentlyContinue)) {
     throw "Invoke-Pester not found. Please install the PowerShell module 'Pester'."
 }
-
+[string] $ds = [System.IO.Path]::DirectorySeparatorChar
+[string] $out = "${PSScriptRoot}${ds}..${ds}out"
+[string] $psgallery_nupkg_name = $null
 [string] $newPsmodulePathEntry = $null
 if ($UsePackageExport) {
-    $ds = [System.IO.Path]::DirectorySeparatorChar
-    [System.IO.FileInfo[]] $psgallery_nupkg = @(Get-ChildItem -Path "${PSScriptRoot}${ds}..${ds}out" -Filter "*.nupkg" -Recurse -File -Force)
-    if (-not $psgallery_nupkg) {
-        throw "No NuGet packages were found in '${PSScriptRoot}${ds}..${ds}out'."
+    [string] $psgallery_nupkg_fullname = $null
+    [System.IO.FileInfo[]] $psgallery_nupkg = @(Get-ChildItem -Path $out -Filter "*.nupkg" -Recurse -File -Force)
+    if ($psgallery_nupkg.Count -eq 0) {
+        throw "No NuGet packages were found in '$out'."
     } elseif ($psgallery_nupkg.Count -gt 1) {
-        throw "Multiple NuGet packages were found in '${PSScriptRoot}${ds}..${ds}out'. Did you forget to clean?"
+        throw "Multiple NuGet packages were found in '$out'. Did you forget to clean?"
     } else {
-        Write-Host "Using NuGet package '${psgallery_nupkg[0].FullName}'."
+        $psgallery_nupkg_name = $psgallery_nupkg[0].BaseName
+        $psgallery_nupkg_fullname = $psgallery_nupkg[0].FullName
+        Write-Host "Using NuGet package '$psgallery_nupkg_fullname'."
     }
-    [string] $package_expanded = "${PSScriptRoot}${ds}..${ds}out${ds}$($psgallery_nupkg[0].BaseName)"
-    Expand-Archive -Path $psgallery_nupkg[0].FullName -DestinationPath $package_expanded -Force | Out-Null
+    [string] $package_expanded = "${out}${ds}${psgallery_nupkg_name}"
+    Expand-Archive -Path $psgallery_nupkg_fullname -DestinationPath $package_expanded -Force | Out-Null
     $newPsmodulePathEntry = $package_expanded
 } else {
     $newPsmodulePathEntry = "${PSScriptRoot}${ds}..${ds}src"
@@ -39,25 +43,25 @@ New-Item -Path Variable:"Global:SubjectModuleName" -Value $moduleName -Force | O
 
 $pesterConfig = New-PesterConfiguration @{
     Run = @{
-        Path = "$PSScriptRoot/../test"
+        Path = "${PSScriptRoot}${ds}..${ds}test"
         Throw = (-not $NoFail)
         PassThru = $true
     }
     TestResult = @{
         Enabled = $true
-        OutputPath = "$PSScriptRoot/../out/test-results.xml"
+        OutputPath = "${out}${ds}test-results.xml"
         OutputFormat = "NUnit3"
     }
     CodeCoverage = @{
         Enabled = $true
-        OutputPath = "$PSScriptRoot/../out/test-coverage.xml"
+        OutputPath = "${out}${ds}test-coverage.xml"
         OutputFormat = "JaCoCo"
         Path = $newPsmodulePathEntry
         RecursePaths = $true
     }
 }
 
-$ps = [System.IO.Path]::PathSeparator
+[string] $ps = [System.IO.Path]::PathSeparator
 Write-Host "Adding '$newPsmodulePathEntry' to '`$Env:PSModulePath'."
 $Env:PSModulePath = "${newPsmodulePathEntry}${ps}$Env:PSModulePath"
 Write-Host "`$Env:PSModulePath: $Env:PSModulePath"
