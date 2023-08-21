@@ -40,44 +40,29 @@ jobs:
               fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${download.name}.zip`, Buffer.from(download.data));
             });
       - name: Unzip version.json
-        uses: actions/github-script@v6
-        with:
-          script: |
-            let fs = require('fs');
-            let unzip = require('unzipper');
-            fs.createReadStream(`${process.env.GITHUB_WORKSPACE}/version.json.zip`)
-              .pipe(unzip.Extract({ path: `${process.env.GITHUB_WORKSPACE}` }));
+        shell: pwsh
+        run: Expand-Archive -Path "version.json.zip" -DestinationPath ./version/
       - name: Upload version.json
         uses: actions/upload-artifact@v3
         with:
           name: version.json
-          path: version.json
+          path: ./version/version.json
       - name: Unzip PSGallery-package
-        uses: actions/github-script@v6
-        with:
-          script: |
-            let fs = require('fs');
-            let unzip = require('unzipper');
-            fs.createReadStream(`${process.env.GITHUB_WORKSPACE}/PSGallery-package.zip`)
-              .pipe(unzip.Extract({ path: `${process.env.GITHUB_WORKSPACE}/PSGallery-package` }));
+        shell: pwsh
+        run: Expand-Archive -Path "PSGallery-package.zip" -DestinationPath ./package/
       - name: Upload PSGallery-package
         uses: actions/upload-artifact@v3
         with:
           name: PSGallery-package
-          path: PSGallery-package
+          path: ./package/*.nupkg
       - name: Unzip release-notes.md
-        uses: actions/github-script@v6
-        with:
-          script: |
-            let fs = require('fs');
-            let unzip = require('unzipper');
-            fs.createReadStream(`${process.env.GITHUB_WORKSPACE}/release-notes.md.zip`)
-              .pipe(unzip.Extract({ path: `${process.env.GITHUB_WORKSPACE}` }));
+        shell: pwsh
+        run: Expand-Archive -Path "release-notes.md.zip" -DestinationPath ./release-notes/
       - name: Upload release-notes.md
         uses: actions/upload-artifact@v3
         with:
           name: release-notes.md
-          path: release-notes.md
+          path: ./release-notes/release-notes.md
 
   test-publish-psgallery-package:
     runs-on: ubuntu-latest
