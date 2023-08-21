@@ -37,11 +37,10 @@ $module_location = Resolve-Path -Path $module_location
 [string] $new_module_location = Join-Path $out $psd1.BaseName
 Move-Item -Path $module_location -Destination $new_module_location -Force | Out-Null
 $module_location = $new_module_location
-[System.IO.FileInfo] $psm1 = Get-ChildItem -Path $module_location -Filter "*.psm1" -Recurse -File -Force | Select-Object -First 1
 
 
 Publish-Module `
-    -Path $psm1.FullName `
+    -Path $module_location `
     -NuGetApiKey $NUGET_KEY `
     -ReleaseNotes $psd1_data.PrivateData.PSData.ReleaseNotes `
     -Tags $psd1_data.PrivateData.PSData.Tags `
