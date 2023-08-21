@@ -91,27 +91,20 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content -Path ./out/version.json | ConvertFrom-Json
+        [object] $version = Get-Content -Path ./out/version.json | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
     - name: Create release notes
       id: create_release_notes
-      uses: mikepenz/release-changelog-builder-action@v4.0.0-rc08
+      uses: mikepenz/release-changelog-builder-action@v4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         fromTag: ${{ steps.gitversion_vars.outputs.VersionSourceSha }}
         toTag: ${{ steps.gitversion_vars.outputs.Sha }}
         commitMode: true
-    - name: Save release notes
-      shell: pwsh
-      env:
-        RELEASE_NOTES: ${{ steps.create_release_notes.outputs.changelog }}
-      run: |
-        $releaseNotes = ($env:RELEASE_NOTES).Trim()
-        New-Item -Path ./out -Type Directory -Force | Out-Null
-        $releaseNotes | Out-File ./out/release-notes.md -Encoding UTF8
+        outputFile: ./out/release-notes.md
     - name: Upload release-notes.md
       uses: actions/upload-artifact@v2
       with:
@@ -134,7 +127,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
+        [object] $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
@@ -146,8 +139,8 @@ jobs:
     - name: Build PSGallery package
       shell: pwsh
       run: |
-        $releaseNotes = (Get-Content -Raw -Path ./out/release-notes.md -Encoding UTF8).Trim()
-        $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
+        [string] $releaseNotes = (Get-Content -Raw -Path ./out/release-notes.md -Encoding UTF8).Trim()
+        [object] $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         ./scripts/package.ps1 -PackageVersionNuGet $version.NuGetVersionV2 -PackageVersionMajorMinorPatchBuild $version.AssemblySemVer -PackageVersionPrereleaseTag $version.PrereleaseTag -ReleaseNotes $releaseNotes -CommitSha $version.Sha
     - name: Upload PSGallery package
       uses: actions/upload-artifact@v3
