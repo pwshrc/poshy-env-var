@@ -48,5 +48,4 @@ Publish-Module `
     -LicenseUri $psd1_data.PrivateData.PSData.LicenseUri `
     -IconUri $psd1_data.PrivateData.PSData.IconUri `
     -ProjectUri $psd1_data.PrivateData.PSData.ProjectUri `
-    -AllowPrerelease:$Prerelease `
     -WhatIf:$WhatIf
