@@ -100,7 +100,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
+        [object] $version = Get-Content -Raw -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
@@ -109,12 +109,6 @@ jobs:
       with:
         name: release-notes.md
         path: ./out/
-    - name: Load release notes
-      id: load_release_notes
-      shell: pwsh
-      run: |
-        $releaseNotes = (Get-Content -Raw -Path ./out/release-notes.md -Encoding UTF8).Trim()
-        echo "::set-output name=release_notes::$releaseNotes"
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
@@ -122,25 +116,18 @@ jobs:
         path: ./out/
     - name: Create release
       id: draft_github_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
+        name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
         tag_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
-        release_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
-        commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
-        body: "${{ steps.load_release_notes.outputs.release_notes }}"
-        draft: true
+        target_commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
+        generate_release_notes: false
+        body_path: ./out/release-notes.md
         prerelease: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
-    - name: Upload release asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.draft_github_release.outputs.upload_url }}
-        asset_path: ./PSGallery-package/*.nupkg
-        asset_name: ${{ steps.gitversion_vars.outputs.NuGetVersionV2 }}.nupkg
-        asset_content_type: application/zip
+        draft: true
+        files: |
+          ./out/PSGallery-package/*.nupkg
+        fail_on_unmatched_files: true
 
   publish-psgallery-package:
     runs-on: ubuntu-latest
@@ -157,7 +144,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
+        [object] $version = Get-Content -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
@@ -194,7 +181,7 @@ jobs:
       id: gitversion_vars
       shell: pwsh
       run: |
-        $version = Get-Content -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
+        [object] $version = Get-Content -Path ./out/version.json -Encoding UTF8 | ConvertFrom-Json
         foreach ($key in $version.PSObject.Properties.Name) {
           echo "::set-output name=$key::$($version.$key)"
         }
@@ -203,12 +190,6 @@ jobs:
       with:
         name: release-notes.md
         path: ./out/
-    - name: Load release notes
-      id: load_release_notes
-      shell: pwsh
-      run: |
-        $releaseNotes = (Get-Content -Raw ./out/release-notes.md -Encoding UTF8).Trim()
-        echo "::set-output name=release_notes::$releaseNotes"
     - name: Download PSGallery package
       uses: actions/download-artifact@v2
       with:
@@ -216,13 +197,12 @@ jobs:
         path: ./out/
     - name: Publish GitHub release
       id: publish_github_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
+        name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
         tag_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
-        release_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
-        commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
-        body: "${{ steps.load_release_notes.outputs.release_notes }}"
-        draft: false
+        target_commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
+        generate_release_notes: false
+        body_path: ./out/release-notes.md
         prerelease: "${{ steps.gitversion_vars.outputs.PreReleaseTag != '' }}"
+        draft: false
