@@ -10,22 +10,30 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
-$ds = [System.IO.Path]::DirectorySeparatorChar
-[System.IO.FileInfo[]] $psgallery_nupkg = Get-ChildItem -Path "${PSScriptRoot}${ds}..${ds}out" -Filter "*.nupkg" -Recurse -File -Force -ErrorAction SilentlyContinue
-if (-not $psgallery_nupkg) {
-    throw "No NuGet packages were found in '${PSScriptRoot}${ds}..${ds}out'."
+[string] $ds = [System.IO.Path]::DirectorySeparatorChar
+[string] $out = "${PSScriptRoot}${ds}..${ds}out"
+[string] $psgallery_nupkg_name = $null
+[string] $psgallery_nupkg_fullname = $null
+[System.IO.FileInfo[]] $psgallery_nupkg = @(Get-ChildItem -Path $out -Filter "*.nupkg" -Recurse -File -Force)
+if ($psgallery_nupkg.Count -eq 0) {
+    throw "No NuGet packages were found in '$out'."
+} elseif ($psgallery_nupkg.Count -gt 1) {
+    throw "Multiple NuGet packages were found in '$out'. Did you forget to clean?"
+} else {
+    $psgallery_nupkg_name = $psgallery_nupkg[0].BaseName
+    $psgallery_nupkg_fullname = $psgallery_nupkg[0].FullName
+    Write-Host "Using NuGet package '$psgallery_nupkg_fullname'."
 }
-if ($psgallery_nupkg.Count -gt 1) {
-    throw "Multiple NuGet packages were found in '${PSScriptRoot}${ds}..${ds}out'. Did you forget to clean?"
+$module_location = "${out}${ds}${psgallery_nupkg_name}"
+if (Test-Path $module_location -ErrorAction SilentlyContinue) {
+    throw "The directory '${module_location}' already exists. Did you forget to clean?"
 }
-[string] $package_expanded = "${PSScriptRoot}${ds}..${ds}out${ds}$($psgallery_nupkg[0].BaseName)"
-if (Test-Path $package_expanded -ErrorAction SilentlyContinue) {
-    throw "The directory '${package_expanded}' already exists. Did you forget to clean?"
-}
-Expand-Archive -Path $psgallery_nupkg[0].FullName -DestinationPath $package_expanded -Force | Out-Null
-[System.IO.FileInfo] $psd1 = Get-ChildItem -Path $package_expanded -Filter "*.psd1" -Recurse -File -Force | Out-Null
+Expand-Archive -Path $psgallery_nupkg_fullname -DestinationPath $module_location -Force | Out-Null
+[System.IO.FileInfo] $psd1 = Get-ChildItem -Path $module_location -Filter "*.psd1" -Recurse -File -Force | Out-Null
 [hashtable] $psd1_data = Import-PowerShellDataFile -Path $psd1[0].FullName
-Move-Item -Path $package_expanded -Destination $psd1.BaseName -Force | Out-Null
+[string] $new_module_location = Join-Path $out $psd1.BaseName
+Move-Item -Path $module_location -Destination $new_module_location -Force | Out-Null
+$module_location = $new_module_location
 
 
 Publish-Module `
