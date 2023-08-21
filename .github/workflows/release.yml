@@ -118,6 +118,7 @@ jobs:
       id: draft_github_release
       uses: softprops/action-gh-release@v1
       with:
+        token: "${{ secrets.RELEASE_GITHUB_TOKEN }}"
         name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
         tag_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
         target_commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
@@ -199,6 +200,7 @@ jobs:
       id: publish_github_release
       uses: softprops/action-gh-release@v1
       with:
+        token: "${{ secrets.RELEASE_GITHUB_TOKEN }}"
         name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
         tag_name: "v${{ steps.gitversion_vars.outputs.FullSemVer }}"
         target_commitish: "${{ steps.gitversion_vars.outputs.Sha }}"
