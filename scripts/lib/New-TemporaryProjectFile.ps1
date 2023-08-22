@@ -48,7 +48,7 @@ function New-TemporaryProjectFile {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string] $PackageDescription,
+        [string] $PackageSynopsis,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -99,7 +99,7 @@ function New-TemporaryProjectFile {
         "PackageReadmeFile" = $ReadmeFileName
         "PackageIcon" = $iconFileName
         "PackageIconUrl" = $packageIconUrl  # Deprecated to have _only_ PackageIconUrl. Use both for max compat.
-        "Description" = $PackageDescription
+        "Description" = $packageSynopsis
         "Copyright" = $PackageCopyright
         "PackageTags" = ($PackageTags -join " ")
         "PackageRequireLicenseAcceptance" = "false"

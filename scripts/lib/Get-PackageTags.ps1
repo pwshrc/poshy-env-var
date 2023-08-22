@@ -46,12 +46,14 @@ function Get-PackageTags {
 
     [string] $tagsFile = "${PSScriptRoot}${ds}..${ds}..${ds}.info${ds}tags.txt"
     if (-not (Test-Path $tagsFile -ErrorAction SilentlyContinue)) {
-        throw "The file '${tagsFile}' does not exist."
+        Write-Error "The file '${tagsFile}' does not exist."
+        return
     }
     [string[]] $tags = ((Get-Content -Path $tagsFile -Encoding UTF8 | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrEmpty($_) }))
 
     if ((-not $tags) -and (-not $ForNuSpec)) {
-        throw "The file '${tagsFile}' is empty."
+        Write-Error "The file '${tagsFile}' is empty."
+        return
     }
 
     if ($ForNuSpec) {

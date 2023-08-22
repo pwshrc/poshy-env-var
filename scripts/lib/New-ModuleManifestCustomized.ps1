@@ -43,7 +43,7 @@ function New-ModuleManifestCustomized {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string] $PackageDescription,
+        [string] $PackageSynopsis,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -116,7 +116,7 @@ function New-ModuleManifestCustomized {
         -RootModule "${PackageId}.psm1" `
         -Author ($Authors -join "; ") `
         -CompanyName $CompanyName `
-        -Description $PackageDescription `
+        -Description $packageSynopsis `
         -Copyright $PackageCopyright `
         -ModuleVersion $PackageVersionMajorMinorPatchBuild `
         -Guid $PackageGuid `
