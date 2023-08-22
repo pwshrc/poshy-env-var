@@ -39,8 +39,8 @@ Set-StrictMode -Version Latest
 [bool] $PSEdition_Core = $true
 
 
-. "${PSScriptRoot}${ds}lib${ds}Get-PackageDescription.ps1"
-[string] $packageDescription = Get-PackageDescription
+. "${PSScriptRoot}${ds}lib${ds}Get-PackageSynopsis.ps1"
+[string] $packageSynopsis = Get-PackageSynopsis
 
 . "${PSScriptRoot}${ds}lib${ds}Get-ModuleExports.ps1"
 [hashtable] $moduleExports = Get-ModuleExports -Psm1Path "${PSScriptRoot}${ds}..${ds}src${ds}${PackageId}.psm1"
@@ -66,7 +66,7 @@ Set-StrictMode -Version Latest
     -LicenseFileName $licenseFileName `
     -ReadmeFileName $readmeFileName `
     -PackageIconUrl $packageIconUrl `
-    -PackageDescription $packageDescription `
+    -PackageSynopsis $packageSynopsis `
     -PackageCopyright $packageCopyright `
     -PackageTags $packageTagsForNuSpec `
     -ReleaseNotes $ReleaseNotes `
@@ -88,7 +88,7 @@ Set-StrictMode -Version Latest
     -LicenseFileName $licenseFileName `
     -ReadmeFileName $readmeFileName `
     -PackageIconUrl $packageIconUrl `
-    -PackageDescription $packageDescription `
+    -PackageSynopsis $packageSynopsis `
     -PackageCopyright $packageCopyright `
     -PackageTags $packageTagsForPSData `
     -ReleaseNotes $ReleaseNotes `
