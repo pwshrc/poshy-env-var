@@ -1,1 +1,1 @@
-Ergonomic cmdlets for getting, setting, and removing environment variables.
+Ergonomic cmdlets for assigning, retrieving, and deleting environment variables - including path-munging for arbitrary PATH variables.
