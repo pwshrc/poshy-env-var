@@ -46,7 +46,8 @@ Set-StrictMode -Version Latest
 [hashtable] $moduleExports = Get-ModuleExports -Psm1Path "${PSScriptRoot}${ds}..${ds}src${ds}${PackageId}.psm1"
 
 . "${PSScriptRoot}${ds}lib${ds}Get-PackageTags.ps1"
-[string[]] $packageTagsExtended = Get-PackageTags -PackageId $PackageId -PSGalleryExtended -ModuleExports $moduleExports -PSEdition_Desktop:$PSEdition_Desktop -PSEdition_Core:$PSEdition_Core
+[string[]] $packageTagsForNuSpec = Get-PackageTags -PackageId $PackageId -ForNuSpec -ModuleExports $moduleExports -PSEdition_Desktop:$PSEdition_Desktop -PSEdition_Core:$PSEdition_Core
+[string[]] $packageTagsForPSData = Get-PackageTags -ForPSData
 
 . "${PSScriptRoot}${ds}lib${ds}Get-PackageCopyright.ps1"
 [string] $packageCopyright = Get-PackageCopyright -LicenseFilePath $licenseFilePath
@@ -67,7 +68,7 @@ Set-StrictMode -Version Latest
     -PackageIconUrl $packageIconUrl `
     -PackageDescription $packageDescription `
     -PackageCopyright $packageCopyright `
-    -PackageTags $packageTagsExtended `
+    -PackageTags $packageTagsForNuSpec `
     -ReleaseNotes $ReleaseNotes `
     -PackageVersionMajorMinorPatchBuild $PackageVersionMajorMinorPatchBuild `
     -PackageVersionPrereleaseTag $PackageVersionPrereleaseTag `
@@ -89,7 +90,7 @@ Set-StrictMode -Version Latest
     -PackageIconUrl $packageIconUrl `
     -PackageDescription $packageDescription `
     -PackageCopyright $packageCopyright `
-    -PackageTags $packageTagsExtended `
+    -PackageTags $packageTagsForPSData `
     -ReleaseNotes $ReleaseNotes `
     -ModuleManifest $moduleManifest
 try {
