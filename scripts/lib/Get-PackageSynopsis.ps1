@@ -13,16 +13,15 @@ function Get-PackageSynopsis {
         Write-Error "The file '${synopsisFilePath}' does not exist."
         return
     }
-    [string] $synopsis = (Get-Content -Raw -Path $synopsisFilePath -Encoding UTF8).Trim()
+    [string] $synopsis = (Get-Content -Raw -Path $synopsisFilePath -Encoding UTF8)
     if ([string]::IsNullOrEmpty($synopsis)) {
         Write-Error "The file '${synopsisFilePath}' is empty."
         return
     }
 
+    $synopsis = $synopsis.Trim()
     if ($ForGitHubRepoDescription) {
         $synopsis = ($synopsis -replace "`r?`n", " ") -replace "\s+", " "
     }
-
-
     return $synopsis
 }
