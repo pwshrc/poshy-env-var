@@ -20,7 +20,6 @@ Set-StrictMode -Version Latest
 function Get-PackageTags {
     param(
         [Parameter(Mandatory = $true, ParameterSetName = "VariantNuSpec")]
-        [Parameter(Mandatory = $true, ParameterSetName = "VariantPSData")]
         [ValidateNotNullOrEmpty()]
         [string] $PackageId,
 
