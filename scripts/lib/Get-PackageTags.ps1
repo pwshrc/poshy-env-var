@@ -40,7 +40,9 @@ function Get-PackageTags {
         [switch] $PSEdition_Desktop,
 
         [Parameter(Mandatory = $false, ParameterSetName = "VariantNuSpec")]
-        [switch] $PSEdition_Core
+        [switch] $PSEdition_Core,
+
+        [switch] $AllowEmpty
     )
 
     [string] $tagsFile = "${PSScriptRoot}${ds}..${ds}..${ds}.info${ds}tags.txt"
@@ -51,6 +53,9 @@ function Get-PackageTags {
     [string[]] $tags = ((Get-Content -Path $tagsFile -Encoding UTF8 | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrEmpty($_) }))
 
     if ((-not $tags) -and (-not $ForNuSpec)) {
+        if ($AllowEmpty) {
+            return
+        }
         Write-Error "The file '${tagsFile}' is empty."
         return
     }

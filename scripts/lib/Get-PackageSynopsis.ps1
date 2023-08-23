@@ -5,7 +5,9 @@ Set-StrictMode -Version Latest
 
 function Get-PackageSynopsis {
     param(
-        [switch] $ForGitHubRepoDescription
+        [switch] $ForGitHubRepoDescription,
+
+        [switch] $AllowEmpty
     )
 
     [string] $synopsisFilePath = "${PSScriptRoot}${ds}..${ds}..${ds}.info${ds}synopsis.txt"
@@ -15,6 +17,9 @@ function Get-PackageSynopsis {
     }
     [string] $synopsis = (Get-Content -Raw -Path $synopsisFilePath -Encoding UTF8)
     if ([string]::IsNullOrEmpty($synopsis)) {
+        if ($AllowEmpty) {
+            return
+        }
         Write-Error "The file '${synopsisFilePath}' is empty."
         return
     }
