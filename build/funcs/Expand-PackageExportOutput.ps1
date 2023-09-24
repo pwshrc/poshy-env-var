@@ -65,5 +65,10 @@ function Expand-PackageExportOutput {
     }
     $moduleLocation = (Rename-Item -Path $moduleLocation -NewName $psd1.BaseName -Force -PassThru).FullName
     $psd1 = Get-ChildItem -Path (Join-Path -Path $moduleLocation -ChildPath $psd1.Name) -File -Force | Select-Object -First 1
+    Write-Information "Cleaning up NuPkg artifacts."
+    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "[Content_Types].xml") -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "_rels") -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "package") -Recurse -Force -ErrorAction SilentlyContinue
+
     return $psd1
 }
