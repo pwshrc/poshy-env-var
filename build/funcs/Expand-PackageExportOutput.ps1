@@ -7,6 +7,7 @@ function Expand-PackageExportOutput {
     param(
     )
 
+    $InformationPreference = "Continue"
     [string] $ds = [System.IO.Path]::DirectorySeparatorChar
     [string] $out = "${PSScriptRoot}${ds}..${ds}..${ds}out"
 
@@ -56,6 +57,12 @@ function Expand-PackageExportOutput {
         throw "No psd1 file was found in '$moduleLocation' that matches '$psgalleryNupkgName'."
     }
 
+    Write-Information "Cleaning up NuPkg artifacts."
+    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "[Content_Types].xml") -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "_rels") -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "package") -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "*.nuspec") -Recurse -Force -ErrorAction SilentlyContinue
+
     # Move the expanded NuPkg to the psd1's name, which is a requirement before it can be imported.
     Write-Information "Renaming folder '$moduleLocation' to match the module name."
     [string] $newModuleLocation = $null
@@ -65,10 +72,6 @@ function Expand-PackageExportOutput {
     }
     $moduleLocation = (Rename-Item -Path $moduleLocation -NewName $psd1.BaseName -Force -PassThru).FullName
     $psd1 = Get-ChildItem -Path (Join-Path -Path $moduleLocation -ChildPath $psd1.Name) -File -Force | Select-Object -First 1
-    Write-Information "Cleaning up NuPkg artifacts."
-    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "[Content_Types].xml") -Force -ErrorAction SilentlyContinue
-    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "_rels") -Recurse -Force -ErrorAction SilentlyContinue
-    Remove-Item -Path (Join-Path -Path $moduleLocation -ChildPath "package") -Recurse -Force -ErrorAction SilentlyContinue
 
     return $psd1
 }
