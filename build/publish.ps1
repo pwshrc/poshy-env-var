@@ -13,6 +13,7 @@ param(
     [switch] $WhatIf
 )
 $ErrorActionPreference = "Stop"
+$InformationPreference = "Continue"
 Set-StrictMode -Version Latest
 
 
