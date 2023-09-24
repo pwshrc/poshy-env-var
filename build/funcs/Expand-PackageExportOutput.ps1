@@ -73,5 +73,10 @@ function Expand-PackageExportOutput {
     $moduleLocation = (Rename-Item -Path $moduleLocation -NewName $psd1.BaseName -Force -PassThru).FullName
     $psd1 = Get-ChildItem -Path (Join-Path -Path $moduleLocation -ChildPath $psd1.Name) -File -Force | Select-Object -First 1
 
+    $DebugPreference = "Continue"
+    Write-Debug "Module location: $moduleLocation"
+    Write-Debug "What I see there:"
+    Get-ChildItem -Path $moduleLocation -Recurse -Force | Write-Debug
+
     return $psd1
 }
