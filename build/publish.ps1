@@ -23,9 +23,6 @@ Set-StrictMode -Version Latest
 [hashtable] $psd1Data = Import-PowerShellDataFile -Path $psd1.FullName
 [string] $expandedModulePath = $psd1.Directory.FullName
 
-Write-Host "What I see here:"
-Get-ChildItem -Path $expandedModulePath -Recurse -Force | Write-Host
-
 Publish-Module `
     -Path $expandedModulePath `
     -NuGetApiKey $NUGET_KEY `
