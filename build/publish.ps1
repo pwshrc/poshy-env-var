@@ -22,7 +22,7 @@ Set-StrictMode -Version Latest
 [hashtable] $psd1Data = Import-PowerShellDataFile -Path $psd1.FullName
 
 [string] $expandedModulePath = (Split-Path $psd1 -Parent)
-Remove-Item -Path $expandedModulePath -Filter "[Content_Types].xml" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path (Join-Path $expandedModulePath "[Content_Types].xml") -Force -ErrorAction SilentlyContinue
 
 Publish-Module `
     -Path $expandedModulePath `
