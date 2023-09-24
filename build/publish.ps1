@@ -21,7 +21,10 @@ Set-StrictMode -Version Latest
 . "${PSScriptRoot}${ds}funcs${ds}Expand-PackageExportOutput.ps1"
 [System.IO.FileInfo] $psd1 = Expand-PackageExportOutput
 [hashtable] $psd1Data = Import-PowerShellDataFile -Path $psd1.FullName
-[string] $expandedModulePath = (Split-Path $psd1 -Parent)
+[string] $expandedModulePath = $psd1.Directory.FullName
+
+Write-Host "What I see here:"
+Get-ChildItem -Path $expandedModulePath -Recurse -Force | Write-Host
 
 Publish-Module `
     -Path $expandedModulePath `
