@@ -20,9 +20,7 @@ Set-StrictMode -Version Latest
 . "${PSScriptRoot}${ds}funcs${ds}Expand-PackageExportOutput.ps1"
 [System.IO.FileInfo] $psd1 = Expand-PackageExportOutput
 [hashtable] $psd1Data = Import-PowerShellDataFile -Path $psd1.FullName
-
 [string] $expandedModulePath = (Split-Path $psd1 -Parent)
-Remove-Item -Path (Join-Path $expandedModulePath "[Content_Types].xml") -Force -ErrorAction SilentlyContinue
 
 Publish-Module `
     -Path $expandedModulePath `
