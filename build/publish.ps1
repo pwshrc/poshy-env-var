@@ -21,8 +21,11 @@ Set-StrictMode -Version Latest
 [System.IO.FileInfo] $psd1 = Expand-PackageExportOutput
 [hashtable] $psd1Data = Import-PowerShellDataFile -Path $psd1.FullName
 
+[string] $expandedModulePath = (Split-Path $psd1 -Parent)
+Remove-Item -Path $expandedModulePath -Filter "[Content_Types].xml" -Force -ErrorAction SilentlyContinue
+
 Publish-Module `
-    -Path (Split-Path $psd1 -Parent) `
+    -Path $expandedModulePath `
     -NuGetApiKey $NUGET_KEY `
     -ReleaseNotes $psd1Data.PrivateData.PSData.ReleaseNotes `
     -Tags $psd1Data.PrivateData.PSData.Tags `
