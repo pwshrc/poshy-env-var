@@ -70,6 +70,8 @@ function Expand-PackageExportOutput {
         | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -Recurse -ErrorAction Continue }
     }
 
+    $_ = Read-Host -Prompt "Press Enter to continue."
+
     $DebugPreference = "Continue"
     Write-Debug "Module location: $moduleLocation"
     Write-Debug "What I see there:"
@@ -83,7 +85,7 @@ function Expand-PackageExportOutput {
         Remove-Item -Path $newModuleLocation -Recurse -Force | Out-Null
     }
     $moduleLocation = (Rename-Item -Path $moduleLocation -NewName $psd1.BaseName -Force -PassThru).FullName
-    $psd1 = Get-ChildItem -Path (Join-Path -Path $moduleLocation -ChildPath $psd1.Name) -File -Force | Select-Object -First 1
+    $psd1 = Get-Item -Path (Join-Path -Path $moduleLocation -ChildPath $psd1.Name) | Select-Object -First 1
 
     return $psd1
 }
