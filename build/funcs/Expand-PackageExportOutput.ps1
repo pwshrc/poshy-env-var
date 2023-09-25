@@ -63,25 +63,11 @@ function Expand-PackageExportOutput {
     Get-ChildItem -Path $moduleLocation -Recurse -Force | Write-Debug
 
     Write-Information "Cleaning up NuPkg artifacts."
-    [string[]] $cleanupFilePatternsToDelete = @("*[Content_Types].xml", "*.nuspec", "_rels", "package")
+    [string[]] $cleanupFilePatternsToDelete = @("[Content_Types].xml", "*.nuspec", "_rels", "package")
     foreach ($cleanupFilePatternToDelete in $cleanupFilePatternsToDelete) {
-        @(Get-ChildItem -Path $moduleLocation -Filter * -Force) + `
-        @(Get-ChildItem -Path $moduleLocation -Filter * -Hidden -Force) + `
-        @(Get-ChildItem -Path $moduleLocation -Filter * -System -Force) `
-        | Where-Object { $_.Name -ilike $cleanupFilePatternToDelete } `
-        | Where-Object { Test-Path -LiteralPath $_ -ErrorAction SilentlyContinue }
+        @(Get-ChildItem -Path $moduleLocation -Filter $cleanupFilePatternToDelete -Force) `
         | ForEach-Object { Write-Information "Removing: $_" } `
-        | Remove-Item -Force -Recurse -ErrorAction Continue
-    }
-    Write-Information "Again."
-    foreach ($cleanupFilePatternToDelete in $cleanupFilePatternsToDelete) {
-        @(Get-ChildItem -Path $moduleLocation -Filter * -Force) + `
-        @(Get-ChildItem -Path $moduleLocation -Filter * -Hidden -Force) + `
-        @(Get-ChildItem -Path $moduleLocation -Filter * -System -Force) `
-        | Where-Object { $_.Name -ilike $cleanupFilePatternToDelete } `
-        | Where-Object { Test-Path -LiteralPath $_ -ErrorAction SilentlyContinue }
-        | ForEach-Object { Write-Information "Removing: $_" } `
-        | Remove-Item -Force -Recurse -ErrorAction Continue
+        | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -Recurse -ErrorAction Continue }
     }
 
     $DebugPreference = "Continue"
