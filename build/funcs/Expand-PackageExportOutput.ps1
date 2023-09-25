@@ -57,24 +57,12 @@ function Expand-PackageExportOutput {
         throw "No psd1 file was found in '$moduleLocation' that matches '$psgalleryNupkgName'."
     }
 
-    $DebugPreference = "Continue"
-    Write-Debug "Module location: $moduleLocation"
-    Write-Debug "What I see there:"
-    Get-ChildItem -Path $moduleLocation -Recurse -Force | Write-Debug
-
     Write-Information "Cleaning up NuPkg artifacts."
     [string[]] $cleanupFilePatternsToDelete = @("[Content_Types].xml", "*.nuspec", "_rels", "package")
     foreach ($cleanupFilePatternToDelete in $cleanupFilePatternsToDelete) {
         @(Get-ChildItem -Path $moduleLocation -Filter $cleanupFilePatternToDelete -Force) `
         | ForEach-Object { Write-Information ("Removing: " + $_.FullName); Remove-Item -LiteralPath $_.FullName -Force -Recurse -ErrorAction Continue }
     }
-
-    $_ = Read-Host -Prompt "Press Enter to continue."
-
-    $DebugPreference = "Continue"
-    Write-Debug "Module location: $moduleLocation"
-    Write-Debug "What I see there:"
-    Get-ChildItem -Path $moduleLocation -Recurse -Force | Write-Debug
 
     # Move the expanded NuPkg to the psd1's name, which is a requirement before it can be imported.
     Write-Information "Renaming folder '$moduleLocation' to match the module name."
