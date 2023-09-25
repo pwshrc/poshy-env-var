@@ -57,37 +57,12 @@ function Expand-PackageExportOutput {
         throw "No psd1 file was found in '$moduleLocation' that matches '$psgalleryNupkgName'."
     }
 
-    $DebugPreference = "Continue"
-    Write-Debug "Module location: $moduleLocation"
-    Write-Debug "What I see there:"
-    Get-ChildItem -Path $moduleLocation -Recurse -Force | Write-Debug
-
     Write-Information "Cleaning up NuPkg artifacts."
-    [string[]] $cleanupFilePatternsToDelete = @("*[Content_Types].xml", "*.nuspec", "_rels", "package")
+    [string[]] $cleanupFilePatternsToDelete = @("[Content_Types].xml", "*.nuspec", "_rels", "package")
     foreach ($cleanupFilePatternToDelete in $cleanupFilePatternsToDelete) {
-        @(Get-ChildItem -Path $moduleLocation -Filter * -Force) + `
-        @(Get-ChildItem -Path $moduleLocation -Filter * -Hidden -Force) + `
-        @(Get-ChildItem -Path $moduleLocation -Filter * -System -Force) `
-        | Where-Object { $_.Name -ilike $cleanupFilePatternToDelete } `
-        | Where-Object { Test-Path -LiteralPath $_ -ErrorAction SilentlyContinue }
-        | ForEach-Object { Write-Information "Removing: $_" } `
-        | Remove-Item -Force -Recurse -ErrorAction Continue
+        @(Get-ChildItem -Path $moduleLocation -Filter $cleanupFilePatternToDelete -Force) `
+        | ForEach-Object { Write-Information ("Removing: " + $_.FullName); Remove-Item -LiteralPath $_.FullName -Force -Recurse -ErrorAction Continue }
     }
-    Write-Information "Again."
-    foreach ($cleanupFilePatternToDelete in $cleanupFilePatternsToDelete) {
-        @(Get-ChildItem -Path $moduleLocation -Filter * -Force) + `
-        @(Get-ChildItem -Path $moduleLocation -Filter * -Hidden -Force) + `
-        @(Get-ChildItem -Path $moduleLocation -Filter * -System -Force) `
-        | Where-Object { $_.Name -ilike $cleanupFilePatternToDelete } `
-        | Where-Object { Test-Path -LiteralPath $_ -ErrorAction SilentlyContinue }
-        | ForEach-Object { Write-Information "Removing: $_" } `
-        | Remove-Item -Force -Recurse -ErrorAction Continue
-    }
-
-    $DebugPreference = "Continue"
-    Write-Debug "Module location: $moduleLocation"
-    Write-Debug "What I see there:"
-    Get-ChildItem -Path $moduleLocation -Recurse -Force | Write-Debug
 
     # Move the expanded NuPkg to the psd1's name, which is a requirement before it can be imported.
     Write-Information "Renaming folder '$moduleLocation' to match the module name."
@@ -97,7 +72,7 @@ function Expand-PackageExportOutput {
         Remove-Item -Path $newModuleLocation -Recurse -Force | Out-Null
     }
     $moduleLocation = (Rename-Item -Path $moduleLocation -NewName $psd1.BaseName -Force -PassThru).FullName
-    $psd1 = Get-ChildItem -Path (Join-Path -Path $moduleLocation -ChildPath $psd1.Name) -File -Force | Select-Object -First 1
+    $psd1 = Get-Item -Path (Join-Path -Path $moduleLocation -ChildPath $psd1.Name) | Select-Object -First 1
 
     return $psd1
 }
