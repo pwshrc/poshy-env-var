@@ -66,8 +66,7 @@ function Expand-PackageExportOutput {
     [string[]] $cleanupFilePatternsToDelete = @("[Content_Types].xml", "*.nuspec", "_rels", "package")
     foreach ($cleanupFilePatternToDelete in $cleanupFilePatternsToDelete) {
         @(Get-ChildItem -Path $moduleLocation -Filter $cleanupFilePatternToDelete -Force) `
-        | ForEach-Object { Write-Information "Removing: " + $_.FullName } `
-        | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -Recurse -ErrorAction Continue }
+        | ForEach-Object { Write-Information ("Removing: " + $_.FullName); Remove-Item -LiteralPath $_.FullName -Force -Recurse -ErrorAction Continue }
     }
 
     $_ = Read-Host -Prompt "Press Enter to continue."
