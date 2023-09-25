@@ -57,13 +57,18 @@ function Expand-PackageExportOutput {
         throw "No psd1 file was found in '$moduleLocation' that matches '$psgalleryNupkgName'."
     }
 
+    $DebugPreference = "Continue"
+    Write-Debug "Module location: $moduleLocation"
+    Write-Debug "What I see there:"
+    Get-ChildItem -Path $moduleLocation -Recurse -Force | Write-Debug
+
     Write-Information "Cleaning up NuPkg artifacts."
     [string[]] $cleanupFilePatternsToDelete = @("[Content_Types].xml", "*.nuspec", "_rels", "package")
     foreach ($cleanupFilePatternToDelete in $cleanupFilePatternsToDelete) {
         Get-ChildItem -Path $moduleLocation -Force `
         | Where-Object { $_.Name -ilike $cleanupFilePatternToDelete } `
         | ForEach-Object { Write-Information "Removing: $_" } `
-        | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+        | Remove-Item -Force -Recurse -ErrorAction Continue
     }
 
     $DebugPreference = "Continue"
