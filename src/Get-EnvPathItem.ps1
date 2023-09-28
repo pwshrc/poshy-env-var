@@ -3,6 +3,22 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
+<#
+.SYNOPSIS
+    Gets the path entries of the environment variable `PATH` at the given environment variable scope.
+.PARAMETER Process
+    Gets the path entries of the environment variable `PATH` at the Process-level environment variable scope.
+.PARAMETER User
+    Gets the path entries of the environment variable `PATH` at the User-level environment variable scope.
+.PARAMETER Machine
+    Gets the path entries of the environment variable `PATH` at the Machine-level environment variable scope.
+.PARAMETER Scope
+    The scope of the environment variable from which the path entries will be retrieved.
+.OUTPUTS
+    string
+.COMPONENT
+    env
+#>
 function Get-EnvPathItem() {
     [CmdletBinding(DefaultParameterSetName = "ProcessScopeForValue")]
     param(
