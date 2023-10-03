@@ -3,6 +3,33 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
+<#
+.SYNOPSIS
+    Removes the specified path entry from the specified PATH-style environment variable at the given environment variable scope.
+.PARAMETER Process
+    Removes the specified path entry from the environment variable at the Process-level environment variable scope.
+.PARAMETER User
+    Removes the specified path entry from the environment variable at the User-level environment variable scope.
+    If running on Windows and the current session is not elevated, causes an exception to be thrown.
+.PARAMETER Machine
+    Removes the specified path entry from the environment variable at the Machine-level environment variable scope.
+    If running on Windows and the current session is not elevated, causes an exception to be thrown.
+.PARAMETER Scope
+    The scope of the environment variable from which the path entry will be removed.
+    If running on Windows and the current session is not elevated, values other than 'Process' cause an exception to be thrown.
+.PARAMETER Name
+    The name of the environment variable from which the path entry will be removed.
+.PARAMETER Value
+    The exact path entry to remove from the environment variable.
+.PARAMETER ValueLike
+    The path entry to remove from the environment variable, using a wildcard pattern match.
+.PARAMETER ValueMatch
+    The path entry to remove from the environment variable, using a regular expression match.
+.EXAMPLE
+    Remove-EnvVarPathItem -Process -Name "PATH" -ValueLike "C:\Program Files\*"
+.COMPONENT
+    env
+#>
 function Remove-EnvVarPathItem() {
     [CmdletBinding(DefaultParameterSetName = "ProcessScopeForValue")]
     param(

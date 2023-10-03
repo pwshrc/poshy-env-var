@@ -3,8 +3,39 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
-# Sets an environment variable, requiring explicit specification of scope.
-# Can accept pipeline of objects with properties `Name` and `Value`.
+<#
+.SYNOPSIS
+    Sets the value of the specified environment variable at the given environment variable scope.
+.PARAMETER Process
+    Sets the value of the environment variable at the Process-level environment variable scope.
+.PARAMETER User
+    Sets the value of the environment variable at the User-level environment variable scope.
+    If running on Windows and the current session is not elevated, causes an exception to be thrown.
+.PARAMETER Machine
+    Sets the value of the environment variable at the Machine-level environment variable scope.
+    If running on Windows and the current session is not elevated, causes an exception to be thrown.
+.PARAMETER Scope
+    The scope of the environment variable to set.
+    If running on Windows and the current session is not elevated, values other than 'Process' cause an exception to be thrown.
+.PARAMETER Name
+    The name of the environment variable to set.
+.PARAMETER Value
+    The value to set for the environment variable.
+.PARAMETER KVP
+    A key-value pair whose key is the name of the environment variable to set and whose value is the value to set for the environment variable.
+.PARAMETER Entry
+    A dictionary entry whose key is the name of the environment variable to set and whose value is the value to set for the environment variable.
+.PARAMETER Environment
+    A hashtable whose keys are the names of the environment variables to set and whose values are the values to set for the environment variables.
+.PARAMETER SkipOverwrite
+    If specified, environment variables that already exist will not be overwritten.
+.EXAMPLE
+    Set-EnvVar -Process -Name "MYAPP_HOME" -Value "C:\Program Files\MyApp"
+.EXAMPLE
+    Set-EnvVar -Process -SkipOverwrite -Environment @{MYAPP_HOME="C:\Program Files\MyApp"; MYAPP_DATA="C:\ProgramData\MyApp"}
+.COMPONENT
+    env
+#>
 function Set-EnvVar() {
     [CmdletBinding(DefaultParameterSetName = "ProcessScopeNAV")]
     param(

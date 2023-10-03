@@ -3,7 +3,31 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
-# Removes matching environment variables, requires explicit specification of scope.
+<#
+.SYNOPSIS
+    Removes the specified environment variable at the given environment variable scope.
+.PARAMETER Process
+    Removes the specified environment variable at the Process-level environment variable scope.
+.PARAMETER User
+    Removes the specified environment variable at the User-level environment variable scope.
+    If running on Windows and the current session is not elevated, causes an exception to be thrown.
+.PARAMETER Machine
+    Removes the specified environment variable at the Machine-level environment variable scope.
+    If running on Windows and the current session is not elevated, causes an exception to be thrown.
+.PARAMETER Scope
+    The scope of the environment variable to remove.
+    If running on Windows and the current session is not elevated, values other than 'Process' cause an exception to be thrown.
+.PARAMETER Name
+    The exact name of the environment variable to remove.
+.PARAMETER NameLike
+    The name of the environment variable to remove, using a wildcard pattern match.
+.PARAMETER NameMatch
+    The name of the environment variable to remove, using a regular expression match.
+.EXAMPLE
+    Remove-EnvVar -Process -NameLike "MYAPP_*"
+.COMPONENT
+    env
+#>
 function Remove-EnvVar() {
     [CmdletBinding(DefaultParameterSetName = "ProcessScopeSpecificName")]
     param(

@@ -3,6 +3,30 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
+
+<#
+.SYNOPSIS
+    Adds a path entry to the environment variable `PATH` at the given environment variable scope.
+.PARAMETER Process
+    Adds the path entry to the environment variable `PATH` at the Process-level environment variable scope.
+.PARAMETER User
+    Adds the path entry to the environment variable `PATH` at the User-level environment variable scope.
+    If running on Windows and the current session is not elevated, causes an exception to be thrown.
+.PARAMETER Machine
+    Adds the path entry to the environment variable `PATH` at the Machine-level environment variable scope.
+    If running on Windows and the current session is not elevated, causes an exception to be thrown.
+.PARAMETER Scope
+    The scope at which to add the entry to the `PATH` environment variable.
+    If running on Windows and the current session is not elevated, values other than 'Process' cause an exception to be thrown.
+.PARAMETER Value
+    The path entry to add to the `PATH` environment variable.
+.PARAMETER Prepend
+    If specified, the path entry will be prepended to the `PATH` environment variable rather than appended.
+.EXAMPLE
+    Add-EnvPathItem -Process "C:\Program Files\MyApp"
+.COMPONENT
+    env
+#>
 function Add-EnvPathItem() {
     [CmdletBinding(DefaultParameterSetName = "ProcessScopeForValue")]
     param(

@@ -3,7 +3,16 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
-# Reads a dotenv file as a stream of name-value pairs.
+<#
+.SYNOPSIS
+    Reads a .env file and outputs a hashtable of the key-value pairs.
+.PARAMETER FilePath
+    The path to the .env file to read.
+.OUTPUTS
+    System.Collections.DictionaryEntry
+.COMPONENT
+    env
+#>
 function Read-DotEnv() {
     [CmdletBinding()]
     param(
