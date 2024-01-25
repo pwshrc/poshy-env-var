@@ -60,12 +60,12 @@ function Get-EnvVar() {
         [ValidateScript({ ($_ -eq [System.EnvironmentVariableTarget]::Process) -or $IsWindows }, ErrorMessage="Only the Process scope is supported on non-Windows platforms.")]
         [System.EnvironmentVariableTarget] $Scope,
 
-        [Parameter(Mandatory=$true, ParameterSetName="MachineScopeSpecificName", Position=1)]
-        [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeSpecificName", Position=1)]
-        [Parameter(Mandatory=$true, ParameterSetName="UserScopeSpecificName", Position=1)]
-        [Parameter(Mandatory=$true, ParameterSetName="ScopeValueSpecificName", Position=1)]
+        [Parameter(Mandatory=$true, ParameterSetName="MachineScopeSpecificName", Position=1, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeSpecificName", Position=1, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName="UserScopeSpecificName", Position=1, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName="ScopeValueSpecificName", Position=1, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNullOrEmpty()]
-        [string] $Name,
+        [string[]] $Name,
 
         [Parameter(Mandatory=$true, ParameterSetName="MachineScopeNameLike", Position=1)]
         [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeNameLike", Position=1)]
@@ -113,20 +113,94 @@ function Get-EnvVar() {
             throw "Unrecognized EnvironmentVariableTarget '$Scope'"
         }
 
-        if ($null -ne $Name) {
+        if ($PSCmdlet.MyInvocation.ExpectingInput) {
             $expectsSingleMultiplicitousReturnType = $false
+        } elseif ($null -ne $Name) {
+            $expectsSingleMultiplicitousReturnType = @(, $Name).Count -gt 1
         } else {
             $expectsSingleMultiplicitousReturnType = $true
         }
-        $allEnvVariablesForScope = [System.Environment]::GetEnvironmentVariables($Scope)
+        $allEnvVariablesForScope = GetAllEnvironmentVariablesInScope $Scope
+
+        $emptyResultsAllowable = $false
+        if ($NameLike -or $NameMatch) {
+            $emptyResultsAllowable = $true
+        } elseif ($allEnvVariablesForScope.PSBase.Count -eq 0) {
+            Write-Information ("Get-EnvVar: There are no environment variables in scope '$Scope'.")
+        }
+
+        $caseSensitivityDescriptor = [string]::Empty
         if ($IsWindows) {
-            $resultsBuilder = [System.Collections.Specialized.OrderedDictionary]::new([System.StringComparer]::OrdinalIgnoreCase)
+            $platformEnvVarNameComparer = [System.StringComparer]::OrdinalIgnoreCase
+            $caseSensitivityDescriptor = "(with the host's case-insensitive comparison semantics)"
         } else {
-            $resultsBuilder = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
+            $platformEnvVarNameComparer = [System.StringComparer]::Ordinal
+            $caseSensitivityDescriptor = "(with the host's case-sensitive comparison semantics)"
+        }
+
+        $resultsBuilder = [System.Collections.Specialized.OrderedDictionary]::new($platformEnvVarNameComparer)
+        function AccumulateResultItem {
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory=$true, Position=0)]
+                [ValidateNotNullOrEmpty()]
+                [string] $envVarName,
+
+                [Parameter(Mandatory=$true, Position=1)]
+                [AllowNull()]
+                [AllowEmptyString()]
+                [object] $envVarValue
+            )
+            Process {
+                # We still need to _count_ the number of results even when we are streaming them out, so that we can detect < 1 and > 1 results.
+                $resultsBuilder.Add($envVarName, $envVarValue)
+                if (-not $expectsSingleMultiplicitousReturnType) {
+                    # Stream out the results as they come in.
+                    if (-not $ValueOnly) {
+                        [System.Collections.DictionaryEntry] $resultItem = [System.Collections.DictionaryEntry]::new($envVarName, $envVarValue)
+                        $resultItem | Write-Output
+                    } else {
+                        Write-Output $envVarValue
+                    }
+                }
+            }
+        }
+        $sourceDescriptor = " "
+        function ReleaseAccumulatedResults {
+            if ($null -eq $resultsBuilder) {
+                throw [System.InvalidOperationException]::new("Get-EnvVar: ReleaseAccumulatedResults: `$resultsBuilder is `$null.")
+            }
+            try {
+                if ($resultsBuilder.Count -eq 0) {
+                    if (-not $emptyResultsAllowable) {
+                        Write-Error ("Get-EnvVar: No environment variable found in scope '$Scope'"+($sourceDescriptor.TrimEnd())+".")
+                    } else {
+                        # Someone might be interested in this, even though they invoked us with "search" semantics (NameLike or NameMatch, any cardinality).
+                        Write-Debug ("Get-EnvVar: No environment variable found in scope '$Scope'"+($sourceDescriptor.TrimEnd())+".")
+                    }
+                }
+                if (-not $expectsSingleMultiplicitousReturnType) {
+                    # We don't need to write any results, we already streamed out the results as they came in.
+                    return
+                } elseif ($resultsBuilder.Count -gt 0) {
+                    $resultsBuilder = $resultsBuilder.AsReadOnly()
+                    if (-not $ValueOnly) {
+                        # This doesn't use `-NoEnumerate` because from this code path we want to strip the single-element array in which PowerShell has wrapped this cmdlet's results.
+                        Write-Output $resultsBuilder
+                    } else {
+                        Write-Output $resultsBuilder.Values -NoEnumerate
+                    }
+                }
+            } finally {
+                if ((-not $expectsSingleMultiplicitousReturnType) -and (-not $resultsBuilder.PSBase.IsFixedSize)) {
+                    # If we haven't returned the results builder (or its Keys or Values) to the caller, we clear it to help the GC.
+                    $resultsBuilder.Clear()
+                }
+                $resultsBuilder = $null
+            }
         }
     }
     Process {
-        $sourceDescriptor = " "
         if ($PSCmdlet.MyInvocation.ExpectingInput) {
             $Name = $PSItem
         }
@@ -138,72 +212,35 @@ function Get-EnvVar() {
                 if (-not [string]::IsNullOrWhiteSpace($sourceDescriptor)) {
                     $sourceDescriptor = " or "
                 }
-                $sourceDescriptor += "named '$envVariableName'"
-                [string] $valueFound = $allEnvVariablesForScope[$envVariableName]
-                if (-not [string]::IsNullOrEmpty($valueFound)) {
-                    $resultsBuilder.Add($envVariableName, $valueFound)
+                $sourceDescriptor += " named '$envVariableName' $caseSensitivityDescriptor"
+                if (-not $allEnvVariablesForScope.ContainsKey($envVariableName)) {
+                    Write-Error ("Get-EnvVar: No environment variable named '$envVariableName' found in scope '$Scope'"+($sourceDescriptor.TrimEnd())+".")
+                } else {
+                    [object] $valueFound = $allEnvVariablesForScope[$envVariableName]
+                    AccumulateResultItem $envVariableName $valueFound
                 }
             }
         } elseif (-not [string]::IsNullOrEmpty($NameLike)) {
-            $sourceDescriptor = " matching wildcard pattern '$NameLike'"
-            foreach ($envVariableName in $allEnvVariablesForScope.Keys) {
-                if ($envVariableName -like $NameLike) {
-                    $resultsBuilder.Add($envVariableName, $allEnvVariablesForScope[$envVariableName])
-                }
+            $sourceDescriptor = " matching wildcard pattern '$NameLike' $caseSensitivityDescriptor"
+            $allEnvVariablesForScope | Where-DictionaryEntry {
+                PlatformEnvVarNameLike $_.Key $NameLike
+            } | ForEach-Object {
+                AccumulateResultItem $_.Key $_.Value
             }
         } elseif (-not [string]::IsNullOrEmpty($NameMatch)) {
-            $sourceDescriptor = " matching regular expression pattern '$NameMatch'"
-            foreach ($envVariableName in $allEnvVariablesForScope.Keys) {
-                if ($envVariableName -match $NameMatch) {
-                    $resultsBuilder.Add($envVariableName, $allEnvVariablesForScope[$envVariableName])
-                }
+            $sourceDescriptor = " matching regular expression pattern '$NameMatch' $caseSensitivityDescriptor"
+            $allEnvVariablesForScope | Where-DictionaryEntry {
+                PlatformEnvVarNameMatch $_.Key $NameMatch
+            } | ForEach-Object {
+                AccumulateResultItem $_.Key $_.Value
             }
         } else {
-            foreach ($envVariableName in $allEnvVariablesForScope.Keys) {
-                $resultsBuilder.Add($envVariableName, $allEnvVariablesForScope[$envVariableName])
-            }
-        }
-
-        if (-not $PSCmdlet.MyInvocation.ExpectingInput) {
-            $resultsBuilder = $resultsBuilder.AsReadOnly()
-            if ($expectsSingleMultiplicitousReturnType -and $resultsBuilder.Count -gt 0) {
-                if (-not $ValueOnly) {
-                    Write-Output ($resultsBuilder)
-                } else {
-                    Write-Output ($resultsBuilder.Values)
-                }
-            } elseif ($resultsBuilder.Count -gt 0) {
-                if (-not $ValueOnly) {
-                    $resultsEnumerator = $resultsBuilder.GetEnumerator()
-                    while ($resultsEnumerator.MoveNext()) {
-                        Write-Output ($resultsEnumerator.Current)
-                    }
-                } else {
-                    $resultsBuilder.Values | ForEach-Object { Write-Output $_ }
-                }
-            } else {
-                Write-Error "Get-EnvVar: No environment variable found in scope '$Scope'${sourceDescriptor}."
+            $allEnvVariablesForScope | Enumerate-DictionaryEntry | ForEach-Object {
+                AccumulateResultItem $_.Key $_.Value
             }
         }
     }
     End {
-        if ($PSCmdlet.MyInvocation.ExpectingInput) {
-            $resultsBuilder = $resultsBuilder.AsReadOnly()
-            if ($expectsSingleMultiplicitousReturnType -and $resultsBuilder.Count -gt 0) {
-                if (-not $ValueOnly) {
-                    Write-Output ($resultsBuilder)
-                } else {
-                    Write-Output ($resultsBuilder.Values)
-                }
-            } elseif ($resultsBuilder.Count -gt 0) {
-                if (-not $ValueOnly) {
-                    $resultsBuilder | ForEach-Object { Write-Output $_ }
-                } else {
-                    $resultsBuilder.Values | ForEach-Object { Write-Output $_ }
-                }
-            } else {
-                Write-Error "Get-EnvVar: No environment variable found in scope '$Scope'${sourceDescriptor}."
-            }
-        }
+        ReleaseAccumulatedResults
     }
 }

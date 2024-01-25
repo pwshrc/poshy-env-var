@@ -4,152 +4,62 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
-
 . "$PSScriptRoot/Get-EnvVar.Common.ps1"
 
 Describe "cmdlet Get-EnvVar" {
+    BeforeDiscovery {
+        Get-ChildItem -Path "$PSScriptRoot/../src/private/*.ps1" | ForEach-Object {
+            . $_.FullName
+        }
+        $expectedEnvironmentVariableScope = [System.EnvironmentVariableTarget]::Process
+    }
+
     BeforeAll {
+        Get-ChildItem -Path "$PSScriptRoot/../src/private/*.ps1" | ForEach-Object {
+            . $_.FullName
+        }
         $expectedEnvironmentVariableScope = [System.EnvironmentVariableTarget]::Process
     }
 
     BeforeEach {
         . "$PSScriptRoot/../src/Get-EnvVar.ps1"
+
+        # Set up an arbitrary environment variable to ensure that the current environment is not empty.
+        $arbitraryEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
+        $arbitraryEnvironmentVariableValue = [System.Guid]::NewGuid().ToString()
+        [System.Environment]::SetEnvironmentVariable($arbitraryEnvironmentVariableName, $arbitraryEnvironmentVariableValue, $expectedEnvironmentVariableScope)
+    }
+
+    AfterEach {
+        if (-not [string]::IsNullOrEmpty($arbitraryEnvironmentVariableName)) {
+            [System.Environment]::SetEnvironmentVariable($arbitraryEnvironmentVariableName, $null, $expectedEnvironmentVariableScope)
+            if (Test-Path -Path "Env:\$arbitraryEnvironmentVariableName" -ErrorAction SilentlyContinue) {
+                Remove-Item -Path "Env:\$arbitraryEnvironmentVariableName" -Force
+            }
+        }
     }
 
     Context "when invoked" {
-        Context "scoped to Process" {
-            BeforeEach {
-                $sutInvocationArgs = [hashtable]@{
-                    $expectedEnvironmentVariableScope.ToString() = $true
-                }
-            }
-
-            Context "no other parameters" {
-                It "should return all Process-level environment variables" {
-                    $expectedEnvironmentVariables = [System.Environment]::GetEnvironmentVariables($expectedEnvironmentVariableScope)
-
-                    $actual = Get-EnvVar @sutInvocationArgs
-
-                    $actual | Should -BeOfType [System.Collections.IDictionary]
-                    $actual = ([System.Collections.IDictionary]$actual)
-                    $actual.IsReadOnly | Should -Be $true
-                    $actual.Count | Should -Be $expectedEnvironmentVariables.Count
-                    $actual.Keys | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Keys | ConvertTo-Json)
-                    $actual.Values | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Values | ConvertTo-Json)
-                }
-            }
-
-            Context "switch ValueOnly present" -Skip { # Fails because SUT parameter specifications are too loose. TODO: Fix SUT.
+        Context "without pipeline input" {
+            Context "scoped to Process" {
                 BeforeEach {
-                    $sutInvocationArgs.ValueOnly = $true
-                }
-
-                It "errs" {
-                    { Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
-                }
-            }
-
-            Context "parameter Name matches existing environment variable name" {
-                BeforeEach {
-                    $expectedEnvironmentVariableName = [System.Environment]::GetEnvironmentVariables($expectedEnvironmentVariableScope).Keys | Get-Random -Count 1
-                    $sutInvocationArgs.Name = $expectedEnvironmentVariableName
-                    $expectedEnvironmentVariableValue = [System.Environment]::GetEnvironmentVariable($expectedEnvironmentVariableName, $expectedEnvironmentVariableScope)
+                    $sutInvocationArgs = [hashtable]@{
+                        $expectedEnvironmentVariableScope.ToString() = $true
+                    }
                 }
 
                 Context "no other parameters" {
-                    It "returns the environment variable entry" {
-                        $actual = Get-EnvVar @sutInvocationArgs
+                    It "should return all Process-level environment variables" {
+                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope $expectedEnvironmentVariableScope
 
-                        $actual | Should -BeOfType [System.Collections.DictionaryEntry]
-                        $actual.Name | Should -Be $expectedEnvironmentVariableName
-                        $actual.Key | Should -Be $expectedEnvironmentVariableName
-                        $actual.Value | Should -Be $expectedEnvironmentVariableValue
-                    }
-                }
-
-                Context "switch ValueOnly present" {
-                    BeforeEach {
-                        $sutInvocationArgs.ValueOnly = $true
-                    }
-
-                    It "returns the environment variable value" {
-                        $actual = Get-EnvVar @sutInvocationArgs
-
-                        $actual | Should -Be $expectedEnvironmentVariableValue
-                    }
-                }
-            }
-
-            Context "parameter Name NOT matches existing environment variable name" {
-                BeforeEach {
-                    $attemptedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
-                    $sutInvocationArgs.Name = $attemptedEnvironmentVariableName
-                }
-
-                Context "no other parameters" {
-                    It "errs" {
-                        { Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
-                    }
-                }
-
-                Context "ErrorAction set to SilentlyContinue" {
-                    BeforeEach {
-                        $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
-                    }
-
-                    It "returns nothing" {
-                        $actual = Get-EnvVar @sutInvocationArgs
-
-                        $actual | Should -BeNullOrEmpty
-                    }
-                }
-
-                Context "switch ValueOnly present" -Skip { # Fails because SUT returns empty value. TODO: Fix SUT.
-                    BeforeEach {
-                        $sutInvocationArgs.ValueOnly = $true
-                    }
-
-                    It "errs" {
-                        { Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
-                    }
-                }
-
-                Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
-                    BeforeEach {
-                        $sutInvocationArgs.ValueOnly = $true
-                        $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
-                    }
-
-                    It "returns nothing" {
-                        $actual = Get-EnvVar @sutInvocationArgs
-
-                        $actual | Should -BeNullOrEmpty
-                    }
-                }
-            }
-
-            Context "parameter NameLike matches an existing environment variable name" {
-                BeforeEach {
-                    $expectedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
-                    $expectedEnvironmentVariableValue = [System.Guid]::NewGuid().ToString()
-                    [System.Environment]::SetEnvironmentVariable($expectedEnvironmentVariableName, $expectedEnvironmentVariableValue, $expectedEnvironmentVariableScope)
-                    $sutInvocationArgs.NameLike = [System.Management.Automation.WildcardPattern]::Escape($expectedEnvironmentVariableName)
-                }
-
-                AfterEach {
-                    [System.Environment]::SetEnvironmentVariable($expectedEnvironmentVariableName, $null, $expectedEnvironmentVariableScope)
-                }
-
-                Context "no other parameters" {
-                    It "returns the environment variable entry in a read-only dictionary" {
                         $actual = Get-EnvVar @sutInvocationArgs
 
                         $actual | Should -BeOfType [System.Collections.IDictionary]
                         $actual = ([System.Collections.IDictionary]$actual)
-                        $actual.IsReadOnly | Should -Be $true
-                        $actual.Count | Should -Be 1
-                        $actual.Keys | Should -Contain $expectedEnvironmentVariableName
-                        $actual.Values | Should -Contain $expectedEnvironmentVariableValue
+                        $actual.PSBase.IsReadOnly | Should -Be $true -Because "the returned results should always be read-only"
+                        $actual.PSBase.Count | Should -Be $expectedEnvironmentVariables.Count
+                        $actual.PSBase.Keys | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Keys | ConvertTo-Json)
+                        $actual.PSBase.Values | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Values | ConvertTo-Json)
                     }
                 }
 
@@ -158,144 +68,550 @@ Describe "cmdlet Get-EnvVar" {
                         $sutInvocationArgs.ValueOnly = $true
                     }
 
-                    It "returns the environment variable value" {
+                    It "should return the values of all Process-level environment variables" {
+                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope $expectedEnvironmentVariableScope
+
                         $actual = Get-EnvVar @sutInvocationArgs
 
-                        $actual | Should -Be $expectedEnvironmentVariableValue
+                        Should -ActualValue $actual -BeOfType [System.Collections.IList] # ($actual -is [System.Collections.IList]) | Should -BeTrue -Because "the returned results should always be ordered"
+                        $actual = ([System.Collections.ICollection]$actual)
+                        $actual.PSBase.IsReadOnly | Should -Be $true -Because "the returned results should always be read-only"
+                        $actual.PSBase.Count | Should -Be $expectedEnvironmentVariables.Count
+                        $actual | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Values | ConvertTo-Json)
+                    }
+                }
+
+                Context "parameter Name matches existing environment variable name" {
+                    BeforeEach {
+                        $expectedEnvironmentVariableName = GetAllEnvironmentVariableKeysInScope $expectedEnvironmentVariableScope | Get-Random -Count 1
+                        $sutInvocationArgs.Name = $expectedEnvironmentVariableName
+                        $expectedEnvironmentVariableValue = [System.Environment]::GetEnvironmentVariable($expectedEnvironmentVariableName, $expectedEnvironmentVariableScope)
+                    }
+
+                    Context "no other parameters" {
+                        It "returns the environment variable entry" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeOfType [System.Collections.DictionaryEntry]
+                            $actual.Key | Should -Be $expectedEnvironmentVariableName
+                            $actual.Value | Should -Be $expectedEnvironmentVariableValue
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "returns the environment variable value" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -Be $expectedEnvironmentVariableValue
+                        }
+                    }
+                }
+
+                Context "parameter Name NOT matches existing environment variable name" {
+                    BeforeEach {
+                        $attemptedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
+                        $sutInvocationArgs.Name = $attemptedEnvironmentVariableName
+                    }
+
+                    Context "no other parameters" {
+                        It "errs" {
+                            { Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "errs" {
+                            { Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
+                    }
+
+                    Context "ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+                }
+
+                Context "parameter NameLike matches an existing environment variable name" {
+                    BeforeEach {
+                        $expectedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
+                        $expectedEnvironmentVariableValue = [System.Guid]::NewGuid().ToString()
+                        [System.Environment]::SetEnvironmentVariable($expectedEnvironmentVariableName, $expectedEnvironmentVariableValue, $expectedEnvironmentVariableScope)
+                        $sutInvocationArgs.NameLike = [System.Management.Automation.WildcardPattern]::Escape($expectedEnvironmentVariableName)
+                    }
+
+                    AfterEach {
+                        [System.Environment]::SetEnvironmentVariable($expectedEnvironmentVariableName, $null, $expectedEnvironmentVariableScope)
+                    }
+
+                    Context "no other parameters" {
+                        It "returns the environment variable entry in a read-only dictionary" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeOfType [System.Collections.IDictionary]
+                            $actual = ([System.Collections.IDictionary]$actual)
+                            $actual.PSBase.IsReadOnly | Should -Be $true -Because "the returned results should always be read-only"
+                            $actual.PSBase.Count | Should -Be 1
+                            $actual.PSBase.Keys | Should -Contain $expectedEnvironmentVariableName
+                            $actual.PSBase.Values | Should -Contain $expectedEnvironmentVariableValue
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "returns the environment variable value" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -Be $expectedEnvironmentVariableValue
+                        }
+                    }
+                }
+
+                Context "parameter NameLike NOT matches an existing environment variable name" {
+                    BeforeEach {
+                        $attemptedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
+                        $sutInvocationArgs.NameLike = $attemptedEnvironmentVariableName
+                    }
+
+                    Context "no other parameters" {
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+                }
+
+                Context "parameter NameMatch matches an existing environment variable name" {
+                    BeforeEach {
+                        $expectedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
+                        $expectedEnvironmentVariableValue = [System.Guid]::NewGuid().ToString()
+                        [System.Environment]::SetEnvironmentVariable($expectedEnvironmentVariableName, $expectedEnvironmentVariableValue, $expectedEnvironmentVariableScope)
+                        $sutInvocationArgs.NameMatch = [System.Text.RegularExpressions.Regex]::Escape($expectedEnvironmentVariableName)
+                    }
+
+                    AfterEach {
+                        [System.Environment]::SetEnvironmentVariable($expectedEnvironmentVariableName, $null, $expectedEnvironmentVariableScope)
+                    }
+
+                    Context "no other parameters" {
+                        It "returns the environment variable entry in a read-only dictionary" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeOfType [System.Collections.IDictionary]
+                            $actual = ([System.Collections.IDictionary]$actual)
+                            $actual.PSBase.IsReadOnly | Should -Be $true -Because "the returned results should always be read-only"
+                            $actual.PSBase.Count | Should -Be 1
+                            $actual.PSBase.Keys | Should -Contain $expectedEnvironmentVariableName
+                            $actual.PSBase.Values | Should -Contain $expectedEnvironmentVariableValue
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "returns the environment variable value" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -Be $expectedEnvironmentVariableValue
+                        }
+                    }
+                }
+
+                Context "parameter NameMatch NOT matches an existing environment variable name" {
+                    BeforeEach {
+                        $attemptedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
+                        $sutInvocationArgs.NameMatch = [System.Text.RegularExpressions.Regex]::Escape($attemptedEnvironmentVariableName)
+                    }
+
+                    Context "no other parameters" {
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
                     }
                 }
             }
+        }
 
-            Context "parameter NameLike NOT matches an existing environment variable name" {
+        Context "with pipeline input" {
+            Context "scoped to Process" {
                 BeforeEach {
-                    $attemptedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
-                    $sutInvocationArgs.NameLike = $attemptedEnvironmentVariableName
-                }
-
-                Context "no other parameters" {
-                    It "errs" {
-                        { Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                    $sutInvocationArgs = [hashtable]@{
+                        $expectedEnvironmentVariableScope.ToString() = $true
                     }
                 }
 
-                Context "switch ValueOnly present" {
+                Context "pipeline is empty string" {
                     BeforeEach {
-                        $sutInvocationArgs.ValueOnly = $true
+                        $sutInvocationPipelineInput = [string]::Empty
                     }
 
-                    It "errs" {
-                        { Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                    Context "no other parameters" {
+                        It "errs" {
+                            { $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
+                    }
+
+                    Context "ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "errs" {
+                            { $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
+                    }
+
+                    Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
                     }
                 }
 
-                Context "ErrorAction set to SilentlyContinue" {
+                Context "pipeline is single string matching environment variable name" {
                     BeforeEach {
-                        $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        $sutInvocationPipelineInput = [string](GetAllEnvironmentVariableKeysInScope $expectedEnvironmentVariableScope | Get-Random -Count 1)
+                        $expectedEnvironmentVariableName = $sutInvocationPipelineInput
+                        $expectedEnvironmentVariableValue = [System.Environment]::GetEnvironmentVariable($expectedEnvironmentVariableName, $expectedEnvironmentVariableScope)
                     }
 
-                    It "returns nothing" {
-                        $actual = Get-EnvVar @sutInvocationArgs
+                    Context "no other parameters" {
+                        It "returns the environment variable entry" {
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
 
-                        $actual | Should -BeNullOrEmpty
+                            $actual | Should -BeOfType [System.Collections.DictionaryEntry]
+                            $actual.Key | Should -Be $expectedEnvironmentVariableName
+                            $actual.Value | Should -Be $expectedEnvironmentVariableValue
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "returns the environment variable value" {
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -Be $expectedEnvironmentVariableValue
+                        }
                     }
                 }
 
-                Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
+                Context "pipeline is multiple strings ALL matching environment variable names" {
                     BeforeEach {
-                        $sutInvocationArgs.ValueOnly = $true
-                        $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        $expectedEnvironmentVariableNames = [string[]]@(GetAllEnvironmentVariableKeysInScope $expectedEnvironmentVariableScope | Get-Random -Count 3)
+                        $sutInvocationPipelineInput = $expectedEnvironmentVariableNames
                     }
 
-                    It "returns nothing" {
-                        $actual = Get-EnvVar @sutInvocationArgs
+                    Context "no other parameters" {
+                        It "returns the environment variable entries" {
+                            $expectedEnvironmentVariableEntryTuples = [System.Collections.DictionaryEntry[]]($expectedEnvironmentVariableNames | ForEach-Object {
+                                [System.Collections.DictionaryEntry]::new($_, [System.Environment]::GetEnvironmentVariable($_, $expectedEnvironmentVariableScope))
+                            })
 
-                        $actual | Should -BeNullOrEmpty
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -Be $expectedEnvironmentVariableEntryTuples
+                        }
                     }
-                }
-            }
 
-            Context "parameter NameMatch matches an existing environment variable name" {
-                BeforeEach {
-                    $expectedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
-                    $expectedEnvironmentVariableValue = [System.Guid]::NewGuid().ToString()
-                    [System.Environment]::SetEnvironmentVariable($expectedEnvironmentVariableName, $expectedEnvironmentVariableValue, $expectedEnvironmentVariableScope)
-                    $sutInvocationArgs.NameMatch = [System.Text.RegularExpressions.Regex]::Escape($expectedEnvironmentVariableName)
-                }
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
 
-                AfterEach {
-                    [System.Environment]::SetEnvironmentVariable($expectedEnvironmentVariableName, $null, $expectedEnvironmentVariableScope)
-                }
+                        It "returns the environment variable values" {
+                            $expectedEnvironmentVariableValues = $expectedEnvironmentVariableNames | ForEach-Object {
+                                [System.Environment]::GetEnvironmentVariable($_, $expectedEnvironmentVariableScope)
+                            }
 
-                Context "no other parameters" {
-                    It "returns the environment variable entry in a read-only dictionary" {
-                        $actual = Get-EnvVar @sutInvocationArgs
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
 
-                        $actual | Should -BeOfType [System.Collections.IDictionary]
-                        $actual = ([System.Collections.IDictionary]$actual)
-                        $actual.IsReadOnly | Should -Be $true
-                        $actual.Count | Should -Be 1
-                        $actual.Keys | Should -Contain $expectedEnvironmentVariableName
-                        $actual.Values | Should -Contain $expectedEnvironmentVariableValue
+                            $actual | Should -Be $expectedEnvironmentVariableValues
+                        }
                     }
                 }
 
-                Context "switch ValueOnly present" {
+                Context "pipeline is single string NOT matching environment variable name" {
                     BeforeEach {
-                        $sutInvocationArgs.ValueOnly = $true
+                        $sutInvocationPipelineInput = "foo" + [System.Guid]::NewGuid().ToString()
                     }
 
-                    It "returns the environment variable value" {
-                        $actual = Get-EnvVar @sutInvocationArgs
+                    Context "no other parameters" {
+                        It "errs" {
+                            { $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
+                    }
 
-                        $actual | Should -Be $expectedEnvironmentVariableValue
+                    Context "ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "errs" {
+                            { $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
+                    }
+
+                    Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
                     }
                 }
-            }
 
-            Context "parameter NameMatch NOT matches an existing environment variable name" {
-                BeforeEach {
-                    $attemptedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
-                    $sutInvocationArgs.NameMatch = [System.Text.RegularExpressions.Regex]::Escape($attemptedEnvironmentVariableName)
-                }
-
-                Context "no other parameters" {
-                    It "errs" {
-                        { Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
-                    }
-                }
-
-                Context "switch ValueOnly present" {
+                Context "pipeline is multiple strings NONE matching environment variable names" {
                     BeforeEach {
-                        $sutInvocationArgs.ValueOnly = $true
+                        $sutInvocationPipelineInput = [string[]]@("foo" + [System.Guid]::NewGuid().ToString(), "foo" + [System.Guid]::NewGuid().ToString(), "foo" + [System.Guid]::NewGuid().ToString())
                     }
 
-                    It "errs" {
-                        { Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                    Context "no other parameters" {
+                        It "errs" {
+                            { $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
+                    }
+
+                    Context "ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "errs" {
+                            { $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
+                    }
+
+                    Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns nothing" {
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -BeNullOrEmpty
+                        }
                     }
                 }
 
-                Context "ErrorAction set to SilentlyContinue" {
+                Context "pipeline is multiple strings SOME matching environment variable names" {
                     BeforeEach {
-                        $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        $expectedEnvironmentVariableNames = [string[]]@(GetAllEnvironmentVariableKeysInScope $expectedEnvironmentVariableScope | Get-Random -Count 3)
+                        $sutInvocationPipelineInput = [string[]]@()
+                        $sutInvocationPipelineInput += $expectedEnvironmentVariableNames
+
+                        # Add the names of some non-existent environment variables.
+                        $sutInvocationPipelineInput += @("foo" + [System.Guid]::NewGuid().ToString(), "foo" + [System.Guid]::NewGuid().ToString(), "foo" + [System.Guid]::NewGuid().ToString())
                     }
 
-                    It "returns nothing" {
-                        $actual = Get-EnvVar @sutInvocationArgs
-
-                        $actual | Should -BeNullOrEmpty
-                    }
-                }
-
-                Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
-                    BeforeEach {
-                        $sutInvocationArgs.ValueOnly = $true
-                        $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                    Context "no other parameters" {
+                        It "errs" {
+                            { $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
                     }
 
-                    It "returns nothing" {
-                        $actual = Get-EnvVar @sutInvocationArgs
+                    Context "ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
 
-                        $actual | Should -BeNullOrEmpty
+                        It "returns the matching environment variable entries" {
+                            $expectedEnvironmentVariableEntryTuples = [System.Collections.DictionaryEntry[]]($expectedEnvironmentVariableNames | ForEach-Object {
+                                [System.Collections.DictionaryEntry]::new($_, [System.Environment]::GetEnvironmentVariable($_, $expectedEnvironmentVariableScope))
+                            })
+
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -Be $expectedEnvironmentVariableEntryTuples
+                        }
+                    }
+
+                    Context "switch ValueOnly present" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                        }
+
+                        It "errs" {
+                            { $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs } | Should -Throw  # TODO: Check for specific error.
+                        }
+                    }
+
+                    Context "switch ValueOnly present, parameter ErrorAction set to SilentlyContinue" {
+                        BeforeEach {
+                            $sutInvocationArgs.ValueOnly = $true
+                            $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                        }
+
+                        It "returns the matching environment variable values" {
+                            $expectedEnvironmentVariableValues = $expectedEnvironmentVariableNames | ForEach-Object {
+                                [System.Environment]::GetEnvironmentVariable($_, $expectedEnvironmentVariableScope)
+                            }
+
+                            $actual = $sutInvocationPipelineInput | Get-EnvVar @sutInvocationArgs
+
+                            $actual | Should -Be $expectedEnvironmentVariableValues
+                        }
                     }
                 }
             }
