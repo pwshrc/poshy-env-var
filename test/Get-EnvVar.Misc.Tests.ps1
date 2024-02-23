@@ -14,20 +14,6 @@ Describe "cmdlet Get-EnvVar" {
     It "should be defined" {
         Test-Path function:Get-EnvVar | Should -Be $true
     }
-
-    Context "when invoked" {
-        Context "without pipeline input" {
-            Context "with no parameters" {
-                It "errs" {
-                    try {
-                        Invoke-Command "Get-EnvVar" -ErrorAction 'Continue' | Out-Null
-                    } catch {
-                        $_.Exception.Message | Should -BeLike "*an insufficient number of parameters were provided*"
-                    }
-                }
-            }
-        }
-    }
 }
 
 Describe "the current process" {

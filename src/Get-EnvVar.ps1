@@ -5,9 +5,9 @@ Set-StrictMode -Version Latest
 
 <#
 .SYNOPSIS
-    Gets the names and values of environment variables at a given environment variable scope.
+    Gets the names and values of environment variables, optionally filtered by scope and/or name.
 .PARAMETER Process
-    Restricts the results to environment variables at the Process-level environment variable scope.
+    Retrieves the environment variables from the current process, which is the default scope.
 .PARAMETER User
     Restricts the results to environment variables at the User-level environment variable scope.
 .PARAMETER Machine
@@ -25,6 +25,7 @@ Set-StrictMode -Version Latest
 .EXAMPLE
     Get-EnvVar -Process -Name "PATH"
 .OUTPUTS
+    System.Collections.Hashtable
     System.Collections.DictionaryEntry
     string
 .COMPONENT
@@ -40,10 +41,10 @@ function Get-EnvVar() {
         [ValidateScript({ $IsWindows }, ErrorMessage="The Machine scope is not supported on non-Windows platforms.")]
         [switch] $Machine,
 
-        [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeAnyName", Position=0)]
-        [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeSpecificName", Position=0)]
-        [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeNameLike", Position=0)]
-        [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeNameMatch", Position=0)]
+        [Parameter(Mandatory=$false, ParameterSetName="ProcessScopeAnyName", Position=0)]
+        [Parameter(Mandatory=$false, ParameterSetName="ProcessScopeSpecificName", Position=0)]
+        [Parameter(Mandatory=$false, ParameterSetName="ProcessScopeNameLike", Position=0)]
+        [Parameter(Mandatory=$false, ParameterSetName="ProcessScopeNameMatch", Position=0)]
         [switch] $Process,
 
         [Parameter(Mandatory=$true, ParameterSetName="UserScopeAnyName", Position=0)]
@@ -101,14 +102,16 @@ function Get-EnvVar() {
         [switch] $ValueOnly
     )
     Begin {
-        if ($Machine -and $Machine.IsPresent) {
+        if ($Machine) {
             $Scope = [System.EnvironmentVariableTarget]::Machine
-        } elseif ($Process -and $Process.IsPresent) {
-            $Scope = [System.EnvironmentVariableTarget]::Process
-        } elseif ($User -and $User.IsPresent) {
+        } elseif ($User) {
             $Scope = [System.EnvironmentVariableTarget]::User
+        } elseif ($Process) {
+            $Scope = [System.EnvironmentVariableTarget]::Process
         }
-
+        if (-not (Get-Variable -Name "Scope" -ValueOnly -ErrorAction SilentlyContinue)) {
+            $Scope = [System.EnvironmentVariableTarget]::Process
+        }
         if (-not [System.EnvironmentVariableTarget]::IsDefined($Scope)) {
             throw "Unrecognized EnvironmentVariableTarget '$Scope'"
         }
