@@ -197,7 +197,7 @@ function Set-EnvVar() {
                 $resultsBuilder = [System.Collections.Specialized.OrderedDictionary]::new($platformEnvVarNameComparer)
             }
         } else {
-            throw [System.NotImplementedException]::new("ParameterSet '$($PSCmdlet.ParameterSetName)' is not yet implemented.")
+            throw [System.NotImplementedException]::new("ParameterSet '$($PSCmdlet.ParameterSetName)' is not implemented.")
         }
     }
     Process {
