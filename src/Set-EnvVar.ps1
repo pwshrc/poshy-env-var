@@ -100,7 +100,25 @@ function Set-EnvVar() {
         [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeHashtable", Position=1, ValueFromPipeline=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="UserScopeHashtable", Position=1, ValueFromPipeline=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="ScopeValueHashtable", Position=1, ValueFromPipeline=$true)]
-        [System.Collections.IDictionary] $Environment
+        [System.Collections.IDictionary] $Environment,
+
+        [Parameter(Mandatory=$false, ParameterSetName="MachineScopeVAName")]
+        [Parameter(Mandatory=$false, ParameterSetName="MachineScopeKVP")]
+        [Parameter(Mandatory=$false, ParameterSetName="MachineScopeDE")]
+        [Parameter(Mandatory=$false, ParameterSetName="MachineScopeHashtable")]
+        [Parameter(Mandatory=$false, ParameterSetName="ProcessScopeVAName")]
+        [Parameter(Mandatory=$false, ParameterSetName="ProcessScopeKVP")]
+        [Parameter(Mandatory=$false, ParameterSetName="ProcessScopeDE")]
+        [Parameter(Mandatory=$false, ParameterSetName="ProcessScopeHashtable")]
+        [Parameter(Mandatory=$false, ParameterSetName="UserScopeVAName")]
+        [Parameter(Mandatory=$false, ParameterSetName="UserScopeKVP")]
+        [Parameter(Mandatory=$false, ParameterSetName="UserScopeDE")]
+        [Parameter(Mandatory=$false, ParameterSetName="UserScopeHashtable")]
+        [Parameter(Mandatory=$false, ParameterSetName="ScopeValueVAName")]
+        [Parameter(Mandatory=$false, ParameterSetName="ScopeValueKVP")]
+        [Parameter(Mandatory=$false, ParameterSetName="ScopeValueDE")]
+        [Parameter(Mandatory=$false, ParameterSetName="ScopeValueHashtable")]
+        [switch] $PassThru
     )
     Begin {
         if ($Machine) {
@@ -140,25 +158,51 @@ function Set-EnvVar() {
                     $envVarName = $extant.Key
                 }
             }
-            SetEnvironmentVariableInScope -Name $envVarName -Value $envVarValue -Scope $Scope
+            return (SetEnvironmentVariableInScope -Name $envVarName -Value $envVarValue -Scope $Scope) && $true
         }
         if ($KVP) {
-            ExecuteWrite -envVarName $KVP.Key -envVarValue $KVP.Value
+            if (ExecuteWrite -envVarName $KVP.Key -envVarValue $KVP.Value) {
+                if ($PassThru) {
+                    $KVP | Write-Output
+                }
+            }
         } elseif ($Entry) {
-            ExecuteWrite -envVarName $Entry.Name -envVarValue $Entry.Value
+            if (ExecuteWrite -envVarName $Entry.Name -envVarValue $Entry.Value) {
+                if ($PassThru) {
+                    $Entry | Write-Output
+                }
+            }
         } elseif ($Name) {
-            ExecuteWrite -envVarNameame $Name -envVarValue $Value
+            if (ExecuteWrite -envVarName $Name -envVarValue $Value) {
+                if ($PassThru) {
+                    [System.Collections.DictionaryEntry]::new($Name, $Value) | Write-Output
+                }
+            }
         }
         elseif ($Environment) {
-            # Intentionally left blank.
+            if ($PassThru) {
+                [System.Collections.Generic.IEqualityComparer[string]] $platformEnvVarNameComparer = GetPlatformEnvVarNameStringComparer
+                $resultsBuilder = [System.Collections.Specialized.OrderedDictionary]::new($platformEnvVarNameComparer)
+            }
         } else {
             throw [System.NotImplementedException]::new("ParameterSet '$($PSCmdlet.ParameterSetName)' is not yet implemented.")
         }
     }
     Process {
         if ($Environment) {
-            $Environment | Enumerate-DictionaryEntry | ForEach-Object {
-                ExecuteWrite -envVarName $_.Key -envVarValue $envVarValue $_.Value
+            try {
+                $Environment | Enumerate-DictionaryEntry | ForEach-Object {
+                    if (ExecuteWrite -envVarName $_.Key -envVarValue $_.Value) {
+                        if ($PassThru) {
+                            $resultsBuilder.Add($_.Key, $_.Value)
+                        }
+                    }
+                }
+            } finally {
+                if ($PassThru -and ($resultsBuilder.PSBase.Count -gt 0)) {
+                    $resultsBuilder.AsReadOnly() | Write-Output
+                    $resultsBuilder = $null
+                }
             }
         }
     }
