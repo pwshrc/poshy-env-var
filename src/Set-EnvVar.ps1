@@ -21,12 +21,16 @@ Set-StrictMode -Version Latest
     The name of the environment variable to set.
 .PARAMETER Value
     The value to set for the environment variable.
+    A value of $null will remove the respective environment variable.
 .PARAMETER KVP
     A key-value pair whose key and value are the environment variable to set.
+    A value of $null will remove the respective environment variable.
 .PARAMETER Entry
     A dictionary entry whose key and value are the environment variable to set.
+    A value of $null will remove the respective environment variable.
 .PARAMETER Environment
     A hashtable whose keys and values are the the environment variables to set.
+    Values of $null will remove the respective environment variables.
 .EXAMPLE
     Set-EnvVar -Process -Name "MYAPP_HOME" -Value "C:\Program Files\MyApp"
 .EXAMPLE
@@ -69,12 +73,14 @@ function Set-EnvVar() {
         [Parameter(Mandatory=$true, ParameterSetName="UserScopeVAName", Position=1, ValueFromPipelineByPropertyName=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="ScopeValueVAName", Position=1, ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNullOrEmpty()]
+        [Alias("Key")]
         [string] $Name,
 
         [Parameter(Mandatory=$true, ParameterSetName="MachineScopeVAName", Position=2, ValueFromPipelineByPropertyName=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeVAName", Position=2, ValueFromPipelineByPropertyName=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="UserScopeVAName", Position=2, ValueFromPipelineByPropertyName=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="ScopeValueVAName", Position=2, ValueFromPipelineByPropertyName=$true)]
+        [AllowNull()]
         [object] $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName="MachineScopeKVP", Position=1, ValueFromPipeline=$true)]
@@ -94,10 +100,7 @@ function Set-EnvVar() {
         [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeHashtable", Position=1, ValueFromPipeline=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="UserScopeHashtable", Position=1, ValueFromPipeline=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="ScopeValueHashtable", Position=1, ValueFromPipeline=$true)]
-        [hashtable] $Environment,
-
-        [Parameter(Mandatory=$false, Position=3)]
-        [switch] $SkipOverwrite
+        [hashtable] $Environment
     )
     Begin {
         if ($Machine) {
@@ -112,13 +115,6 @@ function Set-EnvVar() {
         }
         if (-not [System.EnvironmentVariableTarget]::IsDefined($Scope)) {
             throw "Unrecognized EnvironmentVariableTarget '$Scope'"
-        }
-
-        if ($IsWindows -and ($Scope -ne [System.EnvironmentVariableTarget]::Process)) {
-            [bool] $isElevated = Test-Elevation
-            if (-not $isElevated) {
-                throw "Elevated session required for updating environment variables with scope '$Scope'"
-            }
         }
 
         if ($KVP) {
@@ -140,19 +136,12 @@ function Set-EnvVar() {
             for ($i = 0; $i -lt $Environment.Count; $i++) {
                 $Name = $Environment.Keys[$i]
                 $Value = $Environment.Values[$i]
-                Set-EnvVar -Name $Name -Value $Value -Scope $Scope -SkipOverwrite:$SkipOverwrite
+                SetEnvironmentVariableInScope -Name $Name -Value $Value -Scope $Scope
             }
             return
         }
 
-        if ($SkipOverwrite -and [System.Environment]::GetEnvironmentVariable($Name, $Scope)) {
-            return
-        }
 
-        if ($null -eq $Value) {
-            Remove-EnvVar -Scope $Scope -Name $Name
-        } else {
-            [System.Environment]::SetEnvironmentVariable($Name, $Value, $Scope)
-        }
+        SetEnvironmentVariableInScope -Name $Name -Value $Value -Scope $Scope
     }
 }
