@@ -46,5 +46,32 @@ Describe "cmdlet Set-EnvVar" {
                 # }
             }
         }
+
+        Context "with pipeline input" {
+            Context "no explicit scope" {
+                BeforeEach {
+                    $sutInvocationArgs = [hashtable]@{
+                    }
+                }
+
+                Context "pipeline is X" {
+                    BeforeEach {
+                        $sutInvocationPipelineInput = [string]::Empty # pipeline is X
+                    }
+
+                    Context "no other parameters" {
+                        It "TODO" {
+                            # TODO
+                        }
+                    }
+
+                    # Context "*, ErrorAction set to SilentlyContinue" {
+                    # }
+                }
+
+                # Context "pipeline is *" {
+                # }
+            }
+        }
     }
 }
