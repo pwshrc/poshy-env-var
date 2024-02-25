@@ -100,7 +100,7 @@ function Set-EnvVar() {
         [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeHashtable", Position=1, ValueFromPipeline=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="UserScopeHashtable", Position=1, ValueFromPipeline=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="ScopeValueHashtable", Position=1, ValueFromPipeline=$true)]
-        [hashtable] $Environment
+        [System.Collections.IDictionary] $Environment
     )
     Begin {
         if ($Machine) {
@@ -117,31 +117,49 @@ function Set-EnvVar() {
             throw "Unrecognized EnvironmentVariableTarget '$Scope'"
         }
 
+        [System.StringComparison] $platformEnvVarNameComparison = GetPlatformEnvVarNameStringComparison
+        function ExecuteWrite {
+            [CmdletBinding()]
+            [OutputType([bool])]
+            param(
+                [Parameter(Mandatory=$true, Position=0)]
+                [ValidateNotNullOrEmpty()]
+                [string] $envVarName,
+
+                [Parameter(Mandatory=$true, Position=1)]
+                [AllowNull()]
+                [AllowEmptyString()]
+                [object] $envVarValue
+            )
+            if (($null -ne $envVarValue) -and ([string]::Empty -eq $envVarValue)) {
+                throw [System.NotSupportedException]::new("Setting an environment variable to an empty string is not currently supported. To remove an environment variable, set its value to `$null.")
+            }
+            if ($platformEnvVarNameComparison -eq [System.StringComparison]::OrdinalIgnoreCase) {
+                [System.Collections.DictionaryEntry] $extant = Get-EnvVar -Scope $scope -Name $envVarName -ErrorAction SilentlyContinue
+                if ($extant) {
+                    $envVarName = $extant.Key
+                }
+            }
+            SetEnvironmentVariableInScope -Name $envVarName -Value $envVarValue -Scope $Scope
+        }
         if ($KVP) {
-            $Name = $KVP.Key
-            $Value = $KVP.Value
+            ExecuteWrite -envVarName $KVP.Key -envVarValue $KVP.Value
+        } elseif ($Entry) {
+            ExecuteWrite -envVarName $Entry.Name -envVarValue $Entry.Value
+        } elseif ($Name) {
+            ExecuteWrite -envVarNameame $Name -envVarValue $Value
         }
-
-        if ($Entry) {
-            $Name = $Entry.Name
-            $Value = $Entry.Value
-        }
-
-        if ($Value -is [bool]) {
-            $Value = $Value.ToString().ToLower()
+        elseif ($Environment) {
+            # Intentionally left blank.
+        } else {
+            throw [System.NotImplementedException]::new("ParameterSet '$($PSCmdlet.ParameterSetName)' is not yet implemented.")
         }
     }
     Process {
-        if ($Environment -is [hashtable]) {
-            for ($i = 0; $i -lt $Environment.Count; $i++) {
-                $Name = $Environment.Keys[$i]
-                $Value = $Environment.Values[$i]
-                SetEnvironmentVariableInScope -Name $Name -Value $Value -Scope $Scope
+        if ($Environment) {
+            $Environment | Enumerate-DictionaryEntry | ForEach-Object {
+                ExecuteWrite -envVarName $_.Key -envVarValue $envVarValue $_.Value
             }
-            return
         }
-
-
-        SetEnvironmentVariableInScope -Name $Name -Value $Value -Scope $Scope
     }
 }
