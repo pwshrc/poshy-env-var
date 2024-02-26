@@ -5,22 +5,22 @@ Set-StrictMode -Version Latest
 
 <#
 .SYNOPSIS
-    Sets the value of the specified environment variable, optionally at the given environment variable scope.
+    Sets the value of the specified environment variable(s), optionally at the given environment variable scope.
 .PARAMETER Process
-    Sets the value of the environment variable at the Process-level environment variable scope.
+    Sets the value of the environment variable(s) at the Process-level environment variable scope.
 .PARAMETER User
-    Sets the value of the environment variable at the User-level environment variable scope.
+    Sets the value of the environment variable(s) at the User-level environment variable scope.
     Not supported on non-Windows platforms.
 .PARAMETER Machine
-    Sets the value of the environment variable at the Machine-level environment variable scope.
+    Sets the value of the environment variable(s) at the Machine-level environment variable scope.
     Not supported on non-Windows platforms.
 .PARAMETER Scope
-    The scope of the environment variable to set.
+    The scope of the environment variable(s) to set.
     Values other than 'Process' (the default) are not supported on non-Windows platforms.
 .PARAMETER Name
-    The name of the environment variable to set.
+    The name(s) of the environment variable(s) to set.
 .PARAMETER Value
-    The value to set for the environment variable.
+    The value to set for the environment variable(s).
     A value of $null will remove the respective environment variable.
 .PARAMETER KVP
     A key-value pair whose key and value are the environment variable to set.
@@ -29,7 +29,7 @@ Set-StrictMode -Version Latest
     A dictionary entry whose key and value are the environment variable to set.
     A value of $null will remove the respective environment variable.
 .PARAMETER Environment
-    A hashtable whose keys and values are the the environment variables to set.
+    A hashtable whose keys and values are the environment variables to set.
     Values of $null will remove the respective environment variables.
 .EXAMPLE
     Set-EnvVar -Process -Name "MYAPP_HOME" -Value "C:\Program Files\MyApp"
@@ -74,7 +74,7 @@ function Set-EnvVar() {
         [Parameter(Mandatory=$true, ParameterSetName="ScopeValueVAName", Position=1, ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNullOrEmpty()]
         [Alias("Key")]
-        [string] $Name,
+        [string[]] $Name,
 
         [Parameter(Mandatory=$true, ParameterSetName="MachineScopeVAName", Position=2, ValueFromPipelineByPropertyName=$true)]
         [Parameter(Mandatory=$true, ParameterSetName="ProcessScopeVAName", Position=2, ValueFromPipelineByPropertyName=$true)]
@@ -153,7 +153,7 @@ function Set-EnvVar() {
                 throw [System.NotSupportedException]::new("Setting an environment variable to an empty string is not currently supported. To remove an environment variable, set its value to `$null.")
             }
             if ($platformEnvVarNameComparison -eq [System.StringComparison]::OrdinalIgnoreCase) {
-                [System.Collections.DictionaryEntry] $extant = Get-EnvVar -Scope $scope -Name $envVarName -ErrorAction SilentlyContinue
+                [Nullable[System.Collections.DictionaryEntry]] $extant = Get-EnvVar -Scope $scope -Name $envVarName -ErrorAction SilentlyContinue
                 if ($extant) {
                     $envVarName = $extant.Key
                 }
@@ -161,25 +161,37 @@ function Set-EnvVar() {
             return (SetEnvironmentVariableInScope -Name $envVarName -Value $envVarValue -Scope $Scope) && $true
         }
         if ($KVP) {
+            # It's a simple write, go ahead and do it right here.
             if (ExecuteWrite -envVarName $KVP.Key -envVarValue $KVP.Value) {
                 if ($PassThru) {
                     $KVP | Write-Output
                 }
             }
         } elseif ($Entry) {
+            # It's a simple write, go ahead and do it right here.
             if (ExecuteWrite -envVarName $Entry.Name -envVarValue $Entry.Value) {
                 if ($PassThru) {
                     $Entry | Write-Output
                 }
             }
         } elseif ($Name) {
-            if (ExecuteWrite -envVarName $Name -envVarValue $Value) {
+            if ($Name.Count -gt 1) {
+                # *Not* a simple write. We'll gear up for doing it later, in the Process block.
                 if ($PassThru) {
-                    [System.Collections.DictionaryEntry]::new($Name, $Value) | Write-Output
+                    [System.Collections.Generic.IEqualityComparer[string]] $platformEnvVarNameComparer = GetPlatformEnvVarNameStringComparer
+                    $resultsBuilder = [System.Collections.Specialized.OrderedDictionary]::new($platformEnvVarNameComparer)
+                }
+            } else {
+                # It's a simple write, go ahead and do it right here.
+                if (ExecuteWrite -envVarName @($Name)[0] -envVarValue $Value) {
+                    if ($PassThru) {
+                        [System.Collections.DictionaryEntry]::new(@($Name)[0], $Value) | Write-Output
+                    }
                 }
             }
         }
         elseif ($Environment) {
+            # *Not* a simple write. We'll gear up for doing it later, in the Process block.
             if ($PassThru) {
                 [System.Collections.Generic.IEqualityComparer[string]] $platformEnvVarNameComparer = GetPlatformEnvVarNameStringComparer
                 $resultsBuilder = [System.Collections.Specialized.OrderedDictionary]::new($platformEnvVarNameComparer)
@@ -189,12 +201,22 @@ function Set-EnvVar() {
         }
     }
     Process {
-        if ($Environment) {
+        if ($Environment -or ($Name.Count -gt 1)) {
             try {
-                $Environment | Enumerate-DictionaryEntry | ForEach-Object {
-                    if (ExecuteWrite -envVarName $_.Key -envVarValue $_.Value) {
-                        if ($PassThru) {
-                            $resultsBuilder.Add($_.Key, $_.Value)
+                if ($Environment) {
+                    $Environment | Enumerate-DictionaryEntry | ForEach-Object {
+                        if (ExecuteWrite -envVarName $_.Key -envVarValue $_.Value) {
+                            if ($PassThru) {
+                                $resultsBuilder.Add($_.Key, $_.Value)
+                            }
+                        }
+                    }
+                } else { # $Name.Count -gt 1
+                    $Name | ForEach-Object {
+                        if (ExecuteWrite -envVarName $_ -envVarValue $Value) {
+                            if ($PassThru) {
+                                $resultsBuilder.Add($_, $Value)
+                            }
                         }
                     }
                 }
@@ -204,6 +226,8 @@ function Set-EnvVar() {
                     $resultsBuilder = $null
                 }
             }
+        } else {
+            # There's nothing to do in this case, we already did the simple writes in the Begin block.
         }
     }
 }
