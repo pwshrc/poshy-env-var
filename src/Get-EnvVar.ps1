@@ -123,7 +123,7 @@ function Get-EnvVar() {
         } else {
             $expectsSingleMultiplicitousReturnType = $true
         }
-        $allEnvVariablesForScope = GetAllEnvironmentVariablesInScope $Scope
+        $allEnvVariablesForScope = GetAllEnvironmentVariablesInScope -Scope $Scope -Raw
 
         $emptyResultsAllowable = $false
         if ($NameLike -or $NameMatch) {

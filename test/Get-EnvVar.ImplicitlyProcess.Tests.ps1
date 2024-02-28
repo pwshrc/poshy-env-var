@@ -50,7 +50,7 @@ Describe "cmdlet Get-EnvVar" {
 
                 Context "no other parameters" {
                     It "should return all Process-level environment variables" {
-                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope $expectedEnvironmentVariableScope
+                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
 
                         $actual = Get-EnvVar @sutInvocationArgs
 
@@ -69,7 +69,7 @@ Describe "cmdlet Get-EnvVar" {
                     }
 
                     It "should return the values of all Process-level environment variables" {
-                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope $expectedEnvironmentVariableScope
+                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
 
                         $actual = Get-EnvVar @sutInvocationArgs
 

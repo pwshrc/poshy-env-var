@@ -4,7 +4,9 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
-. "$PSScriptRoot/Get-EnvVar.Common.ps1"
+BeforeDiscovery {
+    . "$PSScriptRoot/Common.ps1"
+}
 
 Describe "cmdlet Get-EnvVar" {
     BeforeDiscovery {
@@ -50,16 +52,17 @@ Describe "cmdlet Get-EnvVar" {
 
                 Context "no other parameters" {
                     It "should return all Process-level environment variables" {
-                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope $expectedEnvironmentVariableScope
+                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Raw
 
                         $actual = Get-EnvVar @sutInvocationArgs
 
-                        $actual | Should -BeOfType [System.Collections.IDictionary]
-                        $actual = ([System.Collections.IDictionary]$actual)
-                        $actual.PSBase.IsReadOnly | Should -Be $true -Because "the returned results should always be read-only"
-                        $actual.PSBase.Count | Should -Be $expectedEnvironmentVariables.Count
-                        $actual.PSBase.Keys | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Keys | ConvertTo-Json)
-                        $actual.PSBase.Values | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Values | ConvertTo-Json)
+                        $expectedEnvironmentVariables | Enumerate-DictionaryEntry | ForEach-Object {
+                            $actual.Keys | Should -Contain $_.Key
+                            $actual[$_.Key] | Should -Be $_.Value
+                        }
+                        $actual | Enumerate-DictionaryEntry | ForEach-Object {
+                            $expectedEnvironmentVariables.Keys | Should -Contain $_.Key
+                        }
                     }
                 }
 
@@ -69,7 +72,7 @@ Describe "cmdlet Get-EnvVar" {
                     }
 
                     It "should return the values of all Process-level environment variables" {
-                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope $expectedEnvironmentVariableScope
+                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
 
                         $actual = Get-EnvVar @sutInvocationArgs
 

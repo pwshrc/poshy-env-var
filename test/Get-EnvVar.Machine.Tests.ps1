@@ -36,7 +36,7 @@ Describe "cmdlet Get-EnvVar" -Skip:(-not (TestCanSetEnvironmentVariablesInScope 
 
                 Context "no other parameters" {
                     It "should return all Machine-level environment variables" {
-                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope $expectedEnvironmentVariableScope
+                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
 
                         $actual = Get-EnvVar @sutInvocationArgs
 
@@ -55,7 +55,7 @@ Describe "cmdlet Get-EnvVar" -Skip:(-not (TestCanSetEnvironmentVariablesInScope 
                     }
 
                     It "should return the values of all Machine-level environment variables" {
-                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope $expectedEnvironmentVariableScope
+                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
 
                         $actual = Get-EnvVar @sutInvocationArgs
 
