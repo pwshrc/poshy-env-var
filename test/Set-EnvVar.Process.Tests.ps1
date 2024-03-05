@@ -4,7 +4,9 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
-. "$PSScriptRoot/Common.ps1"
+BeforeDiscovery {
+    . "$PSScriptRoot/Common.ps1"
+}
 
 Describe "cmdlet Set-EnvVar" {
     BeforeDiscovery {
@@ -37,109 +39,21 @@ Describe "cmdlet Set-EnvVar" {
             $originalEnvironmentVariables[$Name] = $Value
         }
         function Assert-EnvironmentVariablesAllUnchanged {
-            $expectedEnvironmentVariables = $originalEnvironmentVariables.Clone()
             $actualEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
-
-            $expectedEnvironmentVariables.Keys | ForEach-Object {
-                $actualEnvironmentVariables.ContainsKey($_) | Should -Be $true -Because "environment variable named '$_' is expected to still exist"
-                $actualEnvironmentVariables[$_] | Should -Be $expectedEnvironmentVariables[$_] -Because "environment variable named '$_' is expected to be unchanged"
-            }
-            $actualEnvironmentVariables | Enumerate-DictionaryEntry | ForEach-Object {
-                $expectedEnvironmentVariables.ContainsKey($_.Key) | Should -Be $true -Because "environment variable named '$($_.Key)' should not have been created"
-            }
+            $actualEnvironmentVariables | Should -BeHashtableEqualTo $originalEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
         }
         function Assert-EnvironmentVariableWasSet {
-            [CmdletBinding()]
             param(
-                [Parameter(Mandatory=$true, ParameterSetName='Default')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_NameCasedDifferently')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_NameCasedDifferently_WithNoOtherChanges')]
-                # [Parameter(Mandatory=$true, ParameterSetName='NameCasedDifferently')]
-                # [Parameter(Mandatory=$true, ParameterSetName='NameCasedDifferently_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='NameCasingUnchanged')]
-                [Parameter(Mandatory=$true, ParameterSetName='NameCasingUnchanged_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='WithNoOtherChanges')]
                 [ValidateNotNullOrEmpty()]
                 [string] $Name,
 
-                [Parameter(Mandatory=$true, ParameterSetName='Default')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_NameCasedDifferently')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_NameCasedDifferently_WithNoOtherChanges')]
-                # [Parameter(Mandatory=$true, ParameterSetName='NameCasedDifferently')]
-                # [Parameter(Mandatory=$true, ParameterSetName='NameCasedDifferently_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='NameCasingUnchanged')]
-                [Parameter(Mandatory=$true, ParameterSetName='NameCasingUnchanged_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='WithNoOtherChanges')]
                 [AllowNull()][AllowEmptyString()]
-                [object] $Value,
-
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_NameCasedDifferently')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_NameCasedDifferently_WithNoOtherChanges')]
-                [switch] $NewlyCreated,
-
-                # [Parameter(Mandatory=$true, ParameterSetName='NameCasedDifferently')]
-                # [Parameter(Mandatory=$true, ParameterSetName='NameCasedDifferently_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_NameCasedDifferently')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_NameCasedDifferently_WithNoOtherChanges')]
-                [switch] $NameCasedDifferently,
-
-                [Parameter(Mandatory=$true, ParameterSetName='NameCasingUnchanged')]
-                [Parameter(Mandatory=$true, ParameterSetName='NameCasingUnchanged_WithNoOtherChanges')]
-                [switch] $NameCasingUnchanged,
-
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='NewlyCreated_NameCasedDifferently_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='NameCasedDifferently_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='NameCasingUnchanged_WithNoOtherChanges')]
-                [Parameter(Mandatory=$true, ParameterSetName='WithNoOtherChanges')]
-                [switch] $WithNoOtherChanges
+                [object] $Value
             )
+            $expectedEnvironmentVariables = $originalEnvironmentVariables.Clone()
+            $expectedEnvironmentVariables[$Name] = $Value
             $actualEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
-            if ($NewlyCreated) {
-                $actualEnvironmentVariables.ContainsKey($Name) | Should -Be $true -Because "environment variable named '$Name' should have been created"
-            } else {
-                $actualEnvironmentVariables.ContainsKey($Name) | Should -Be $true -Because "environment variable named '$Name' should still exist"
-            }
-            $actualEnvironmentVariables[$Name] | Should -Be $Value -Because "environment variable named '$Name' is expected to have specific value"
-            if ($NewlyCreated) {
-                $originalEnvironmentVariables.ContainsKey($Name) | Should -Be $false -Because "environment variable named '$Name' should not have existed before"
-            } else {
-                $originalEnvironmentVariables.ContainsKey($Name) | Should -Be $true -Because "environment variable named '$Name' should have existed before"
-            }
-            if (-not $NewlyCreated) {
-                if ($NameCasedDifferently) {
-                    $exactOriginalName = $originalEnvironmentVariables.Keys | Where-Object { $_ -ieq $Name } | Select-Object -First 1
-                    $exactOriginalName | Should -Not -BeNullOrEmpty -Because "environment variable named '$Name' should have been found in originalEnvironmentVariables"
-                    $exactCurrentName = $actualEnvironmentVariables.Keys | Where-Object { $_ -ieq $Name } | Select-Object -First 1
-                    $exactCurrentName | Should -Not -BeNullOrEmpty -Because "environment variable named '$Name' should have been found in actualEnvironmentVariables"
-                    $exactCurrentName | Should -Not -BeExactly $exactOriginalName -Because "environment variable named '$Name' should have had a name casing change"
-                } elseif ($NameCasingUnchanged) {
-                    $exactOriginalName = $originalEnvironmentVariables.Keys | Where-Object { $_ -ieq $Name } | Select-Object -First 1
-                    $exactOriginalName | Should -Not -BeNullOrEmpty -Because "environment variable named '$Name' should have been found in originalEnvironmentVariables"
-                    $exactCurrentName = $actualEnvironmentVariables.Keys | Where-Object { $_ -ieq $Name } | Select-Object -First 1
-                    $exactCurrentName | Should -Not -BeNullOrEmpty -Because "environment variable named '$Name' should have been found in actualEnvironmentVariables"
-                    $exactCurrentName | Should -BeExactly $exactOriginalName -Because "environment variable named '$Name' should not have had a name casing change"
-                }
-            } elseif ($NewlyCreated -and $NameCasedDifferently) {
-                $originalEnvironmentVariables.Keys | Where-Object { $_ -ieq $Name } | Should -BeNullOrEmpty -Because "environment variable named '$Name' should not have existed before"
-            }
-            if ($WithNoOtherChanges) {
-                $expectedEnvironmentVariables = $originalEnvironmentVariables.Clone()
-                $expectedEnvironmentVariables[$Name] = $Value
-                $expectedEnvironmentVariables | Enumerate-DictionaryEntry | ForEach-Object {
-                    $actualEnvironmentVariables.ContainsKey($_.Key) | Should -Be $true -Because "environment variable named '$($_.Key)' should still exist"
-                    $actualEnvironmentVariables[$_.Key] | Should -Be $_.Value -Because "environment variable named '$($_.Key)' should be unchanged"
-                }
-                $actualEnvironmentVariables | Enumerate-DictionaryEntry | ForEach-Object {
-                    $expectedEnvironmentVariables.ContainsKey($_.Key) | Should -Be $true -Because "environment variable named '$($_.Key)' should not have been created"
-                }
-            }
+            $actualEnvironmentVariables | Should -BeHashtableEqualTo $expectedEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
         }
     }
 
@@ -202,7 +116,7 @@ Describe "cmdlet Set-EnvVar" {
                             It "creates the environment variable" {
                                 Set-EnvVar @sutInvocationArgs
 
-                                Assert-EnvironmentVariableWasSet -Name $attemptedEnvironmentVariableName -Value $attemptedEnvironmentVariableValue -NewlyCreated -WithNoOtherChanges
+                                Assert-EnvironmentVariableWasSet -Name $attemptedEnvironmentVariableName -Value $attemptedEnvironmentVariableValue
                             }
                         }
 
@@ -215,7 +129,7 @@ Describe "cmdlet Set-EnvVar" {
                             It "updates the environment variable" {
                                 Set-EnvVar @sutInvocationArgs
 
-                                Assert-EnvironmentVariableWasSet -Name $attemptedEnvironmentVariableName -Value $attemptedEnvironmentVariableValue -WithNoOtherChanges
+                                Assert-EnvironmentVariableWasSet -Name $attemptedEnvironmentVariableName -Value $attemptedEnvironmentVariableValue
                             }
                         }
 
@@ -230,7 +144,7 @@ Describe "cmdlet Set-EnvVar" {
                                 It "updates the environment variable's value, but doesn't change its name" {
                                     Set-EnvVar @sutInvocationArgs
 
-                                    Assert-EnvironmentVariableWasSet -Name $attemptedEnvironmentVariableName -Value $attemptedEnvironmentVariableValue -NameCasingUnchanged -WithNoOtherChanges
+                                    Assert-EnvironmentVariableWasSet -Name $originalEnvironmentVariableName -Value $attemptedEnvironmentVariableValue
                                 }
                             }
 
@@ -238,7 +152,7 @@ Describe "cmdlet Set-EnvVar" {
                                 It "creates a new environment variable, and doesn't change the original" {
                                     Set-EnvVar @sutInvocationArgs
 
-                                    Assert-EnvironmentVariableWasSet -Name $attemptedEnvironmentVariableName -Value $attemptedEnvironmentVariableValue -NameCasedDifferently -NewlyCreated -WithNoOtherChanges
+                                    Assert-EnvironmentVariableWasSet -Name $originalEnvironmentVariableName -Value $attemptedEnvironmentVariableValue
                                 }
                             }
                         }
