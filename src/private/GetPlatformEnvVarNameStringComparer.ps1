@@ -8,8 +8,8 @@ function GetPlatformEnvVarNameStringComparer {
     param(
     )
     if ($IsWindows) {
-        return [System.StringComparer]::OrdinalIgnoreCase
+        [System.StringComparer]::OrdinalIgnoreCase | Write-Output
     } else {
-        return [System.StringComparer]::Ordinal
+        [System.StringComparer]::Ordinal | Write-Output
     }
 }

@@ -56,13 +56,7 @@ Describe "cmdlet Get-EnvVar" {
 
                         $actual = Get-EnvVar @sutInvocationArgs
 
-                        $expectedEnvironmentVariables | Enumerate-DictionaryEntry | ForEach-Object {
-                            $actual.Keys | Should -Contain $_.Key
-                            $actual[$_.Key] | Should -Be $_.Value
-                        }
-                        $actual | Enumerate-DictionaryEntry | ForEach-Object {
-                            $expectedEnvironmentVariables.Keys | Should -Contain $_.Key
-                        }
+                        $actual | Should -BeHashtableEqualTo $expectedEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
                     }
                 }
 
@@ -76,11 +70,11 @@ Describe "cmdlet Get-EnvVar" {
 
                         $actual = Get-EnvVar @sutInvocationArgs
 
-                        Should -ActualValue $actual -BeOfType [System.Collections.IList] # ($actual -is [System.Collections.IList]) | Should -BeTrue -Because "the returned results should always be ordered"
+                        Should -ActualValue $actual -BeOfType [System.Collections.IList]
                         $actual = ([System.Collections.ICollection]$actual)
                         $actual.PSBase.IsReadOnly | Should -Be $true -Because "the returned results should always be read-only"
                         $actual.PSBase.Count | Should -Be $expectedEnvironmentVariables.Count
-                        $actual | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Values | ConvertTo-Json)
+                        $actual | Should -BeEnumerableSequenceEqualTo ($expectedEnvironmentVariables.Values)
                     }
                 }
 

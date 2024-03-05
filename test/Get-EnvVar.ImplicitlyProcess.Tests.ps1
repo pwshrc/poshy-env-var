@@ -4,7 +4,9 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
-. "$PSScriptRoot/Get-EnvVar.Common.ps1"
+BeforeDiscovery {
+    . "$PSScriptRoot/Common.ps1"
+}
 
 Describe "cmdlet Get-EnvVar" {
     BeforeDiscovery {
@@ -50,16 +52,11 @@ Describe "cmdlet Get-EnvVar" {
 
                 Context "no other parameters" {
                     It "should return all Process-level environment variables" {
-                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
+                        $expectedEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Raw
 
                         $actual = Get-EnvVar @sutInvocationArgs
 
-                        $actual | Should -BeOfType [System.Collections.IDictionary]
-                        $actual = ([System.Collections.IDictionary]$actual)
-                        $actual.PSBase.IsReadOnly | Should -Be $true -Because "the returned results should always be read-only"
-                        $actual.PSBase.Count | Should -Be $expectedEnvironmentVariables.Count
-                        $actual.PSBase.Keys | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Keys | ConvertTo-Json)
-                        $actual.PSBase.Values | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Values | ConvertTo-Json)
+                        $actual | Should -BeHashtableEqualTo $expectedEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
                     }
                 }
 
@@ -73,11 +70,11 @@ Describe "cmdlet Get-EnvVar" {
 
                         $actual = Get-EnvVar @sutInvocationArgs
 
-                        Should -ActualValue $actual -BeOfType [System.Collections.IList] # ($actual -is [System.Collections.IList]) | Should -BeTrue -Because "the returned results should always be ordered"
+                        Should -ActualValue $actual -BeOfType [System.Collections.IList]
                         $actual = ([System.Collections.ICollection]$actual)
                         $actual.PSBase.IsReadOnly | Should -Be $true -Because "the returned results should always be read-only"
                         $actual.PSBase.Count | Should -Be $expectedEnvironmentVariables.Count
-                        $actual | ConvertTo-Json | Should -Be ($expectedEnvironmentVariables.Values | ConvertTo-Json)
+                        $actual | Should -BeEnumerableSequenceEqualTo ($expectedEnvironmentVariables.Values)
                     }
                 }
 

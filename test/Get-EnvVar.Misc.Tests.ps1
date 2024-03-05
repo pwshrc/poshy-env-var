@@ -4,7 +4,9 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 
-. "$PSScriptRoot/Get-EnvVar.Common.ps1"
+BeforeDiscovery {
+    . "$PSScriptRoot/Common.ps1"
+}
 
 Describe "cmdlet Get-EnvVar" {
     BeforeEach {
