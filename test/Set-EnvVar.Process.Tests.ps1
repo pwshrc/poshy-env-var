@@ -43,6 +43,7 @@ Describe "cmdlet Set-EnvVar" {
             $actualEnvironmentVariables | Should -BeHashtableEqualTo $originalEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
         }
         function Assert-EnvironmentVariableWasSet {
+            [CmdletBinding()]
             param(
                 [ValidateNotNullOrEmpty()]
                 [string] $Name,
@@ -52,6 +53,17 @@ Describe "cmdlet Set-EnvVar" {
             )
             $expectedEnvironmentVariables = $originalEnvironmentVariables.Clone()
             $expectedEnvironmentVariables[$Name] = $Value
+            $actualEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
+            $actualEnvironmentVariables | Should -BeHashtableEqualTo $expectedEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
+        }
+        function Assert-EnvironmentVariableWasRemoved {
+            [CmdletBinding()]
+            param(
+                [ValidateNotNullOrEmpty()]
+                [string] $Name
+            )
+            $expectedEnvironmentVariables = $originalEnvironmentVariables.Clone()
+            $expectedEnvironmentVariables.Remove($Name)
             $actualEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
             $actualEnvironmentVariables | Should -BeHashtableEqualTo $expectedEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
         }
@@ -158,35 +170,56 @@ Describe "cmdlet Set-EnvVar" {
                         }
                     }
 
-                    # TODO:
-                    # Context "Value parameter is `$null" {
-                        # TODO:
-                        # Context "environment variable already existed" {
-                            # TODO:
-                            # It …
-                        # }
+                    Context "Value parameter is `$null" {
+                        BeforeEach {
+                            $sutInvocationArgs.Add("Value", $null)
+                        }
 
-                        # TODO:
-                        # Context "environment variable already existed, name cased differently" {
-                            # TODO:
-                            # Context "platform env var names are case-insensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
+                        Context "environment variable already existed" {
+                            BeforeEach {
+                                $originalEnvironmentVariableValue = "baz"+[System.Guid]::NewGuid().ToString()
+                                Set-EnvironmentVariableWithProvenance -Name $attemptedEnvironmentVariableName -Value $originalEnvironmentVariableValue
+                            }
 
-                            # TODO:
-                            # Context "platform env var names are case-sensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
-                        # }
+                            It "removes the environment variable" {
+                                Set-EnvVar @sutInvocationArgs
 
-                        # TODO:
-                        # Context "environment variable didn't already exist" {
-                            # TODO:
-                            # It …
-                        # }
-                    # }
+                                Assert-EnvironmentVariableWasRemoved -Name $attemptedEnvironmentVariableName
+                            }
+                        }
+
+                        Context "environment variable already existed, name cased differently" {
+                            BeforeEach {
+                                $originalEnvironmentVariableName = $attemptedEnvironmentVariableName.ToUpper()
+                                $originalEnvironmentVariableValue = "baz"+[System.Guid]::NewGuid().ToString()
+                                Set-EnvironmentVariableWithProvenance -Name $originalEnvironmentVariableName -Value $originalEnvironmentVariableValue
+                            }
+
+                            Context "platform env var names are case-insensitive" -Skip:(-not $IsWindows) {
+                                It "removes the environment variable" {
+                                    Set-EnvVar @sutInvocationArgs
+
+                                    Assert-EnvironmentVariableWasRemoved -Name $originalEnvironmentVariableName
+                                }
+                            }
+
+                            Context "platform env var names are case-sensitive" -Skip:($IsWindows) {
+                                It "removes the environment variable" {
+                                    Set-EnvVar @sutInvocationArgs
+
+                                    Assert-EnvironmentVariableWasRemoved -Name $originalEnvironmentVariableName
+                                }
+                            }
+                        }
+
+                        Context "environment variable didn't already exist" {
+                            It "does nothing" {
+                                Set-EnvVar @sutInvocationArgs
+
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
+                        }
+                    }
 
                     # TODO:
                     # Context "Value parameter is empty string" {
