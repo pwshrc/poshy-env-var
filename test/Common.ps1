@@ -41,6 +41,12 @@ function Should-BeHashtableEqualTo {
         Write-Output -InputObject $keys -NoEnumerate
     }
 
+    $validationFailures = [System.Collections.Generic.List[string]]::new()
+
+    if ($ActualValue.PSBase.Count -ne $ExpectedValue.PSBase.Count) {
+        $validationFailures.Add("actual has different number of elements ($($ActualValue.PSBase.Count)) than expected ($($ExpectedValue.PSBase.Count))")
+    }
+
     $expectedKeysExact = Get-KeysHashSet -Dictionary $ExpectedValue -Comparer ([System.StringComparer]::Ordinal)
     $expectedKeysAsExpected = Get-KeysHashSet -Dictionary $ExpectedValue -Comparer $KeyComparer
     $actualKeysExact = Get-KeysHashSet -Dictionary $ActualValue -Comparer ([System.StringComparer]::Ordinal)
@@ -54,52 +60,60 @@ function Should-BeHashtableEqualTo {
     $identicalKeysAsExpected = $expectedKeysAsExpected.Intersect($actualKeysAsExpected)
     $extraneousKeysExact = $actualKeysExact.SymmetricExcept($expectedKeysExact)
     $extraneousKeysAsExpected = $actualKeysAsExpected.SymmetricExcept($expectedKeysAsExpected)
-    [bool] $caseDifferencesExist = `
+    [bool] $keyCaseDifferencesExist = `
         ($expectedKeysExact.Count -ne $expectedKeysAsExpected.Count) -or
         ($actualKeysExact.Count -ne $actualKeysAsExpected.Count) -or
         ($missingKeysExact.Count -ne $missingKeysAsExpected.Count) -or
         ($unexpectedKeysExact.Count -ne $unexpectedKeysAsExpected.Count) -or
-        ($identicalKeysExact.Count -ne $identicalKeysAsExpected.Count)
+        ($identicalKeysExact.Count -ne $identicalKeysAsExpected.Count) -or
+        ($extraneousKeysExact.Count -ne $extraneousKeysAsExpected.Count)
+    if ($keyCaseDifferencesExist) {
+        $missingKeysNotBecauseCasing = $missingKeysAsExpected.Except($missingKeysExact)
+        $unexpectedKeysNotBecauseCasing = $unexpectedKeysAsExpected.Except($unexpectedKeysExact)
+        $missingKeysBecauseCasing = $missingKeysAsExpected.Except($missingKeysNotBecauseCasing)
+        $unexpectedKeysBecauseCasing = $unexpectedKeysAsExpected.Except($unexpectedKeysNotBecauseCasing)
 
-    $validationFailures = [System.Collections.Generic.List[string]]::new()
+        if ($missingKeysNotBecauseCasing.Count -gt 0) {
+            $examples = $missingKeysAsExpected | Select-Object -First 3
+            $examplesText = $examples -join ", "
+            $validationFailures.Add("actual is wholly missing elements with expected keys (e.g. $examplesText) ($($missingKeysExact.Count) total)")
+        }
 
-    if ($ActualValue.PSBase.Count -ne $ExpectedValue.PSBase.Count) {
-        $validationFailures.Add("actual has different number of elements ($($ActualValue.PSBase.Count)) than expected ($($ExpectedValue.PSBase.Count))")
-    }
+        if ($unexpectedKeysNotBecauseCasing.Count -gt 0) {
+            $examples = $unexpectedKeysNotBecauseCasing | Select-Object -First 3
+            $examplesText = $examples -join ", "
+            $validationFailures.Add("actual has elements with wholly unexpected keys (e.g. $examplesText) ($($unexpectedKeysNotBecauseCasing.Count) total)")
+        }
 
-    $missingKeysNotBecauseCasing = $missingKeysAsExpected.Except($missingKeysExact)
-    $missingKeysBecauseCasing = $missingKeysAsExpected.Except($missingKeysNotBecauseCasing)
-    $unexpectedKeysNotBecauseCasing = $unexpectedKeysAsExpected.Except($unexpectedKeysExact)
-    $unexpectedKeysBecauseCasing = $unexpectedKeysAsExpected.Except($unexpectedKeysNotBecauseCasing)
+        $keyCasingChanges = [System.Collections.Immutable.ImmutableDictionary[string, object]]::Empty.WithComparers([System.StringComparer]::Ordinal)
+        foreach ($originalKey in $missingKeysBecauseCasing) {
+            $changedKey = $actualKeysAsExpected | Where-Object { [System.StringComparer]::OrdinalIgnoreCase.Equals($originalKey, $_) } | Select-Object -First 1
+            $keyCasingChanges = $keyCasingChanges.SetItem($originalKey, $changedKey)
+        }
+        foreach ($changedKey in $unexpectedKeysBecauseCasing) {
+            $originalKey = $expectedKeysAsExpected | Where-Object { [System.StringComparer]::OrdinalIgnoreCase.Equals($_, $changedKey) } | Select-Object -First 1
+            $keyCasingChanges = $keyCasingChanges.SetItem($originalKey, $changedKey)
+        }
+        $keyCasingChanges = @($keyCasingChanges | Enumerate-DictionaryEntry | ForEach-Object {
+            [PSCustomObject]@{ Expected = $_.Key; Actual = $_.Value }
+        })
+        if ($keyCasingChanges.Count -gt 0) {
+            $examples = $keyCasingChanges | Select-Object -First 1
+            $examplesText = $examples -join ", "
+            $validationFailures.Add("actual has elements with keys that differ only by case from expected (e.g. $examplesText) ($($keyCasingChanges.PSBase.Count) total)")
+        }
+    } else {
+        if ($missingKeysExact.Count -gt 0) {
+            $examples = $missingKeysExact | Select-Object -First 3
+            $examplesText = $examples -join ", "
+            $validationFailures.Add("actual is missing elements with expected keys (e.g. $examplesText) ($($missingKeysExact.Count) total)")
+        }
 
-    if ($missingKeysNotBecauseCasing.Count -gt 0) {
-        $examples = $missingKeysAsExpected | Select-Object -First 3
-        $examplesText = $examples -join ", "
-        $validationFailures.Add("actual is wholly missing elements with expected keys (e.g. $examplesText) ($($missingKeysExact.Count) total)")
-    }
-
-    if ($unexpectedKeysNotBecauseCasing.Count -gt 0) {
-        $examples = $unexpectedKeysNotBecauseCasing | Select-Object -First 3
-        $examplesText = $examples -join ", "
-        $validationFailures.Add("actual has elements with wholly unexpected keys (e.g. $examplesText) ($($unexpectedKeysNotBecauseCasing.Count) total)")
-    }
-
-    $keyCasingChanges = [System.Collections.Immutable.ImmutableDictionary[string, object]]::Empty.WithComparers([System.StringComparer]::Ordinal)
-    foreach ($originalKey in $missingKeysBecauseCasing) {
-        $changedKey = $actualKeysAsExpected | Where-Object { [System.StringComparer]::OrdinalIgnoreCase.Equals($originalKey, $changedKey) } | Select-Object -First 1
-        $keyCasingChanges = $keyCasingChanges.SetItem($originalKey, $changedKey)
-    }
-    foreach ($changedKey in $unexpectedKeysBecauseCasing) {
-        $originalKey = $expectedKeysAsExpected | Where-Object { [System.StringComparer]::OrdinalIgnoreCase.Equals($originalKey, $changedKey) } | Select-Object -First 1
-        $keyCasingChanges = $keyCasingChanges.SetItem($originalKey, $changedKey)
-    }
-    $keyCasingChanges = @($keyCasingChanges | Enumerate-DictionaryEntry | ForEach-Object {
-        [PSCustomObject]@{ Expected = $_.Key; Actual = $_.Value }
-    })
-    if ($keyCasingChanges.Count -gt 0) {
-        $examples = $keyCasingChanges | Select-Object -First 1
-        $examplesText = $examples -join ", "
-        $validationFailures.Add("actual has elements with keys that differ only by case from expected (e.g. $examplesText) ($($keyCasingChanges.PSBase.Count) total)")
+        if ($unexpectedKeysExact.Count -gt 0) {
+            $examples = $unexpectedKeysExact | Select-Object -First 3
+            $examplesText = $examples -join ", "
+            $validationFailures.Add("actual has elements with unexpected keys (e.g. $examplesText) ($($unexpectedKeysExact.Count) total)")
+        }
     }
 
     $valueChanges = [System.Collections.Immutable.ImmutableDictionary[string, object]]::Empty.WithComparers($KeyComparer)
@@ -134,7 +148,7 @@ function Should-BeHashtableEqualTo {
             if ($Because) {
                 $FailureMessage = $FailureMessage.TrimEnd(".")+": $Because."
             }
-            [PSCustomObject]@{ Succeeded = $true; FailureMessage = $FailureMessage } | Write-Output
+            [PSCustomObject]@{ Succeeded = $false; FailureMessage = $FailureMessage } | Write-Output
         } else {
             [PSCustomObject]@{ Succeeded = $true } | Write-Output
         }
