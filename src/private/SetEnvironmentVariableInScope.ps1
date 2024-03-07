@@ -18,7 +18,8 @@ function SetEnvironmentVariableInScope {
         [System.EnvironmentVariableTarget] $scope
     )
     if (($null -ne $value) -and ([string]::Empty -eq $value)) {
-        throw [System.NotSupportedException]::new("Setting an environment variable to an empty string is not currently supported. To remove an environment variable, set its value to `$null.")
+        Write-Error "Setting an environment variable to an empty string is not currently supported. To remove an environment variable, set it to `$null."
+    } else {
+        [System.Environment]::SetEnvironmentVariable($name, $value, $scope)
     }
-    [System.Environment]::SetEnvironmentVariable($name, $value, $scope)
 }
