@@ -221,35 +221,105 @@ Describe "cmdlet Set-EnvVar" {
                         }
                     }
 
-                    # TODO:
-                    # Context "Value parameter is empty string" {
-                        # TODO:
-                        # Context "environment variable already existed" {
-                            # TODO:
-                            # It …
-                        # }
+                    Context "Value parameter is empty string" {
+                        BeforeEach {
+                            $sutInvocationArgs.Add("Value", [string]::Empty)
+                        }
 
-                        # TODO:
-                        # Context "environment variable already existed, name cased differently" {
-                            # TODO:
-                            # Context "platform env var names are case-insensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
+                        Context "environment variable already existed" {
+                            It "errs" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Throw
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
 
-                            # TODO:
-                            # Context "platform env var names are case-sensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
-                        # }
+                            Context "ErrorAction set to SilentlyContinue" {
+                                BeforeEach {
+                                    $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                                }
 
-                        # TODO:
-                        # Context "environment variable didn't already exist" {
-                            # TODO:
-                            # It …
-                        # }
-                    # }
+                                It "does nothing" {
+                                    { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+                                    Assert-EnvironmentVariablesAllUnchanged
+                                }
+
+                                It "returns nothing" {
+                                    $result = Set-EnvVar @sutInvocationArgs
+                                    $result | Should -BeNullOrEmpty
+                                }
+                            }
+                        }
+
+                        Context "environment variable already existed, name cased differently" {
+                            Context "platform env var names are case-insensitive" -Skip:(-not $IsWindows) {
+                                It "errs" {
+                                    { Set-EnvVar @sutInvocationArgs } | Should -Throw
+                                    Assert-EnvironmentVariablesAllUnchanged
+                                }
+
+                                Context "ErrorAction set to SilentlyContinue" {
+                                    BeforeEach {
+                                        $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                                    }
+
+                                    It "does nothing" {
+                                        { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+                                        Assert-EnvironmentVariablesAllUnchanged
+                                    }
+
+                                    It "returns nothing" {
+                                        $result = Set-EnvVar @sutInvocationArgs
+                                        $result | Should -BeNullOrEmpty
+                                    }
+                                }
+                            }
+
+                            Context "platform env var names are case-sensitive" -Skip:($IsWindows) {
+                                It "errs" {
+                                    { Set-EnvVar @sutInvocationArgs } | Should -Throw
+                                    Assert-EnvironmentVariablesAllUnchanged
+                                }
+
+                                Context "ErrorAction set to SilentlyContinue" {
+                                    BeforeEach {
+                                        $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                                    }
+
+                                    It "does nothing" {
+                                        { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+                                        Assert-EnvironmentVariablesAllUnchanged
+                                    }
+
+                                    It "returns nothing" {
+                                        $result = Set-EnvVar @sutInvocationArgs
+                                        $result | Should -BeNullOrEmpty
+                                    }
+                                }
+                            }
+                        }
+
+                        Context "environment variable didn't already exist" {
+                            It "errs" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Throw
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
+
+                            Context "ErrorAction set to SilentlyContinue" {
+                                BeforeEach {
+                                    $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                                }
+
+                                It "does nothing" {
+                                    { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+                                    Assert-EnvironmentVariablesAllUnchanged
+                                }
+
+                                It "returns nothing" {
+                                    $result = Set-EnvVar @sutInvocationArgs
+                                    $result | Should -BeNullOrEmpty
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Context "Name parameter has multiple values" {
