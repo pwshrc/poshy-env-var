@@ -152,7 +152,7 @@ function Set-EnvVar() {
                 [object] $envVarValue
             )
             if (($null -ne $envVarValue) -and ([string]::Empty -eq $envVarValue)) {
-                throw [System.NotSupportedException]::new("Setting an environment variable to an empty string is not currently supported. To remove an environment variable, set its value to `$null.")
+                Write-Error "Setting an environment variable to an empty string is not currently supported. To remove an environment variable, set it to `$null."
             }
             if ($platformEnvVarNameComparison -eq [System.StringComparison]::OrdinalIgnoreCase) {
                 [Nullable[System.Collections.DictionaryEntry]] $extant = Get-EnvVar -Scope $scope -Name $envVarName -ErrorAction SilentlyContinue
