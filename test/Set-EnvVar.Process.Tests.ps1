@@ -323,27 +323,39 @@ Describe "cmdlet Set-EnvVar" {
                 }
 
                 Context "Name parameter has multiple" {
-                    Context "strings ALL matching environment variable names" {
-                        # TODO:
-                        # Context "missing Value parameter" {
-                            # TODO:
-                            # It …
+                    BeforeEach {
+                        $attemptedEnvironmentVariableNames = @("foo" + [System.Guid]::NewGuid().ToString(), "foo" + [System.Guid]::NewGuid().ToString(), "foo" + [System.Guid]::NewGuid().ToString())
+                        $sutInvocationArgs.Name = $attemptedEnvironmentVariableNames
+                    }
 
-                            # TODO:
-                            # Context "ErrorAction set to SilentlyContinue" {
-                            # }
-                        # }
+                    Context "strings ALL matching environment variable names" {
+                        BeforeEach {
+                            $overwrittenEnvironmentVariableNames = $attemptedEnvironmentVariableNames
+                            $overwrittenEnvironmentVariableValues = @("baz"+[System.Guid]::NewGuid().ToString(), "baz"+[System.Guid]::NewGuid().ToString(), "baz"+[System.Guid]::NewGuid().ToString())
+                            Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableNames[0] -Value $overwrittenEnvironmentVariableValues[0]
+                            Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableNames[1] -Value $overwrittenEnvironmentVariableValues[1]
+                            Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableNames[2] -Value $overwrittenEnvironmentVariableValues[2]
+                        }
+
+                        Context "missing Value parameter" { # e.g. "no other parameters"
+                            It "errs" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
+
+                            # We don't test for 'ErrorAction set to SilentlyContinue' because it doesn't suppress ParameterBindingException.
+                        }
 
                         # TODO:
                         # Context "Value parameter is valid" {
                             # TODO:
-                            # Context "environment variable already existed" {
+                            # Context "environment variables already existed" {
                                 # TODO:
                                 # It …
                             # }
 
                             # TODO:
-                            # Context "environment variable already existed, name cased differently" {
+                            # Context "environment variables already existed, names cased differently" {
                                 # TODO:
                                 # Context "platform env var names are case-insensitive" { # conditionally skip
                                     # TODO:
@@ -355,25 +367,19 @@ Describe "cmdlet Set-EnvVar" {
                                     # TODO:
                                     # It …
                                 # }
-                            # }
-
-                            # TODO:
-                            # Context "environment variable didn't already exist" {
-                                # TODO:
-                                # It …
                             # }
                         # }
 
                         # TODO:
                         # Context "Value parameter is `$null" {
                             # TODO:
-                            # Context "environment variable already existed" {
+                            # Context "environment variables already existed" {
                                 # TODO:
                                 # It …
                             # }
 
                             # TODO:
-                            # Context "environment variable already existed, name cased differently" {
+                            # Context "environment variables already existed, names cased differently" {
                                 # TODO:
                                 # Context "platform env var names are case-insensitive" { # conditionally skip
                                     # TODO:
@@ -385,12 +391,6 @@ Describe "cmdlet Set-EnvVar" {
                                     # TODO:
                                     # It …
                                 # }
-                            # }
-
-                            # TODO:
-                            # Context "environment variable didn't already exist" {
-                                # TODO:
-                                # It …
                             # }
                         # }
 
@@ -403,7 +403,7 @@ Describe "cmdlet Set-EnvVar" {
                             # }
 
                             # TODO:
-                            # Context "environment variable already existed, name cased differently" {
+                            # Context "environment variables already existed, names cased differently" {
                                 # TODO:
                                 # Context "platform env var names are case-insensitive" { # conditionally skip
                                     # TODO:
@@ -415,52 +415,28 @@ Describe "cmdlet Set-EnvVar" {
                                     # TODO:
                                     # It …
                                 # }
-                            # }
-
-                            # TODO:
-                            # Context "environment variable didn't already exist" {
-                                # TODO:
-                                # It …
                             # }
                         # }
                     }
 
                     Context "strings NONE matching environment variable names" {
-                        # TODO:
-                        # Context "missing Value parameter" {
-                            # TODO:
-                            # It …
+                        BeforeEach {
+                            # Intentionally left blank.
+                        }
 
-                            # TODO:
-                            # Context "ErrorAction set to SilentlyContinue" {
-                            # }
-                        # }
+                        Context "missing Value parameter" { # e.g. "no other parameters"
+                            It "errs" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
+
+                            # We don't test for 'ErrorAction set to SilentlyContinue' because it doesn't suppress ParameterBindingException.
+                        }
 
                         # TODO:
                         # Context "Value parameter is valid" {
                             # TODO:
-                            # Context "environment variable already existed" {
-                                # TODO:
-                                # It …
-                            # }
-
-                            # TODO:
-                            # Context "environment variable already existed, name cased differently" {
-                                # TODO:
-                                # Context "platform env var names are case-insensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-
-                                # TODO:
-                                # Context "platform env var names are case-sensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-                            # }
-
-                            # TODO:
-                            # Context "environment variable didn't already exist" {
+                            # Context "environment variables didn't already exist" {
                                 # TODO:
                                 # It …
                             # }
@@ -469,28 +445,7 @@ Describe "cmdlet Set-EnvVar" {
                         # TODO:
                         # Context "Value parameter is `$null" {
                             # TODO:
-                            # Context "environment variable already existed" {
-                                # TODO:
-                                # It …
-                            # }
-
-                            # TODO:
-                            # Context "environment variable already existed, name cased differently" {
-                                # TODO:
-                                # Context "platform env var names are case-insensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-
-                                # TODO:
-                                # Context "platform env var names are case-sensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-                            # }
-
-                            # TODO:
-                            # Context "environment variable didn't already exist" {
+                            # Context "environment variables didn't already exist" {
                                 # TODO:
                                 # It …
                             # }
@@ -499,28 +454,7 @@ Describe "cmdlet Set-EnvVar" {
                         # TODO:
                         # Context "Value parameter is empty string" {
                             # TODO:
-                            # Context "environment variable already existed" {
-                                # TODO:
-                                # It …
-                            # }
-
-                            # TODO:
-                            # Context "environment variable already existed, name cased differently" {
-                                # TODO:
-                                # Context "platform env var names are case-insensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-
-                                # TODO:
-                                # Context "platform env var names are case-sensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-                            # }
-
-                            # TODO:
-                            # Context "environment variable didn't already exist" {
+                            # Context "environment variables didn't already exist" {
                                 # TODO:
                                 # It …
                             # }
@@ -528,26 +462,31 @@ Describe "cmdlet Set-EnvVar" {
                     }
 
                     Context "strings SOME matching environment variable names" {
-                        # TODO:
-                        # Context "missing Value parameter" {
-                            # TODO:
-                            # It …
+                        BeforeEach {
+                            $overwrittenEnvironmentVariableName = $attemptedEnvironmentVariableNames[1]
+                            $overwrittenEnvironmentVariableValue = "baz"+[System.Guid]::NewGuid().ToString()
+                            Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableName -Value $overwrittenEnvironmentVariableValue
+                        }
 
-                            # TODO:
-                            # Context "ErrorAction set to SilentlyContinue" {
-                            # }
-                        # }
+                        Context "missing Value parameter" { # e.g. "no other parameters"
+                            It "errs" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
+
+                            # We don't test for 'ErrorAction set to SilentlyContinue' because it doesn't suppress ParameterBindingException.
+                        }
 
                         # TODO:
                         # Context "Value parameter is valid" {
                             # TODO:
-                            # Context "environment variable already existed" {
+                            # Context "environment variables mixed-existence" {
                                 # TODO:
                                 # It …
                             # }
 
                             # TODO:
-                            # Context "environment variable already existed, name cased differently" {
+                            # Context "environment variables mixed-existence, select name cased differently" {
                                 # TODO:
                                 # Context "platform env var names are case-insensitive" { # conditionally skip
                                     # TODO:
@@ -559,25 +498,19 @@ Describe "cmdlet Set-EnvVar" {
                                     # TODO:
                                     # It …
                                 # }
-                            # }
-
-                            # TODO:
-                            # Context "environment variable didn't already exist" {
-                                # TODO:
-                                # It …
                             # }
                         # }
 
                         # TODO:
                         # Context "Value parameter is `$null" {
                             # TODO:
-                            # Context "environment variable already existed" {
+                            # Context "environment variables mixed-existence" {
                                 # TODO:
                                 # It …
                             # }
 
                             # TODO:
-                            # Context "environment variable already existed, name cased differently" {
+                            # Context "environment variables mixed-existence, select name cased differently" {
                                 # TODO:
                                 # Context "platform env var names are case-insensitive" { # conditionally skip
                                     # TODO:
@@ -589,25 +522,19 @@ Describe "cmdlet Set-EnvVar" {
                                     # TODO:
                                     # It …
                                 # }
-                            # }
-
-                            # TODO:
-                            # Context "environment variable didn't already exist" {
-                                # TODO:
-                                # It …
                             # }
                         # }
 
                         # TODO:
                         # Context "Value parameter is empty string" {
                             # TODO:
-                            # Context "environment variable already existed" {
+                            # Context "environment variables mixed-existence" {
                                 # TODO:
                                 # It …
                             # }
 
                             # TODO:
-                            # Context "environment variable already existed, name cased differently" {
+                            # Context "environment variables mixed-existence, select name cased differently" {
                                 # TODO:
                                 # Context "platform env var names are case-insensitive" { # conditionally skip
                                     # TODO:
@@ -619,12 +546,6 @@ Describe "cmdlet Set-EnvVar" {
                                     # TODO:
                                     # It …
                                 # }
-                            # }
-
-                            # TODO:
-                            # Context "environment variable didn't already exist" {
-                                # TODO:
-                                # It …
                             # }
                         # }
                     }
