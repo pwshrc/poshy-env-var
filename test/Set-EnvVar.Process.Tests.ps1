@@ -322,106 +322,312 @@ Describe "cmdlet Set-EnvVar" {
                     }
                 }
 
-                Context "Name parameter has multiple values" {
-                    # TODO:
-                    # Context "missing Value parameter" {
+                Context "Name parameter has multiple" {
+                    Context "strings ALL matching environment variable names" {
                         # TODO:
-                        # It …
-
-                        # TODO:
-                        # Context "ErrorAction set to SilentlyContinue" {
-                        # }
-                    # }
-
-                    # TODO:
-                    # Context "Value parameter is valid" {
-                        # TODO:
-                        # Context "environment variable already existed" {
+                        # Context "missing Value parameter" {
                             # TODO:
                             # It …
+
+                            # TODO:
+                            # Context "ErrorAction set to SilentlyContinue" {
+                            # }
                         # }
 
                         # TODO:
-                        # Context "environment variable already existed, name cased differently" {
+                        # Context "Value parameter is valid" {
                             # TODO:
-                            # Context "platform env var names are case-insensitive" { # conditionally skip
+                            # Context "environment variable already existed" {
                                 # TODO:
                                 # It …
                             # }
 
                             # TODO:
-                            # Context "platform env var names are case-sensitive" { # conditionally skip
+                            # Context "environment variable already existed, name cased differently" {
                                 # TODO:
-                                # It …
-                            # }
-                        # }
+                                # Context "platform env var names are case-insensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
 
-                        # TODO:
-                        # Context "environment variable didn't already exist" {
-                            # TODO:
-                            # It …
-                        # }
-                    # }
-
-                    # TODO:
-                    # Context "Value parameter is `$null" {
-                        # TODO:
-                        # Context "environment variable already existed" {
-                            # TODO:
-                            # It …
-                        # }
-
-                        # TODO:
-                        # Context "environment variable already existed, name cased differently" {
-                            # TODO:
-                            # Context "platform env var names are case-insensitive" { # conditionally skip
                                 # TODO:
-                                # It …
+                                # Context "platform env var names are case-sensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
                             # }
 
                             # TODO:
-                            # Context "platform env var names are case-sensitive" { # conditionally skip
+                            # Context "environment variable didn't already exist" {
                                 # TODO:
                                 # It …
                             # }
                         # }
 
                         # TODO:
-                        # Context "environment variable didn't already exist" {
+                        # Context "Value parameter is `$null" {
                             # TODO:
-                            # It …
-                        # }
-                    # }
-
-                    # TODO:
-                    # Context "Value parameter is empty string" {
-                        # TODO:
-                        # Context "environment variable already existed" {
-                            # TODO:
-                            # It …
-                        # }
-
-                        # TODO:
-                        # Context "environment variable already existed, name cased differently" {
-                            # TODO:
-                            # Context "platform env var names are case-insensitive" { # conditionally skip
+                            # Context "environment variable already existed" {
                                 # TODO:
                                 # It …
                             # }
 
                             # TODO:
-                            # Context "platform env var names are case-sensitive" { # conditionally skip
+                            # Context "environment variable already existed, name cased differently" {
+                                # TODO:
+                                # Context "platform env var names are case-insensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+
+                                # TODO:
+                                # Context "platform env var names are case-sensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+                            # }
+
+                            # TODO:
+                            # Context "environment variable didn't already exist" {
                                 # TODO:
                                 # It …
                             # }
                         # }
 
                         # TODO:
-                        # Context "environment variable didn't already exist" {
+                        # Context "Value parameter is empty string" {
+                            # TODO:
+                            # Context "environment variable already existed" {
+                                # TODO:
+                                # It …
+                            # }
+
+                            # TODO:
+                            # Context "environment variable already existed, name cased differently" {
+                                # TODO:
+                                # Context "platform env var names are case-insensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+
+                                # TODO:
+                                # Context "platform env var names are case-sensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+                            # }
+
+                            # TODO:
+                            # Context "environment variable didn't already exist" {
+                                # TODO:
+                                # It …
+                            # }
+                        # }
+                    }
+
+                    Context "strings NONE matching environment variable names" {
+                        # TODO:
+                        # Context "missing Value parameter" {
                             # TODO:
                             # It …
+
+                            # TODO:
+                            # Context "ErrorAction set to SilentlyContinue" {
+                            # }
                         # }
-                    # }
+
+                        # TODO:
+                        # Context "Value parameter is valid" {
+                            # TODO:
+                            # Context "environment variable already existed" {
+                                # TODO:
+                                # It …
+                            # }
+
+                            # TODO:
+                            # Context "environment variable already existed, name cased differently" {
+                                # TODO:
+                                # Context "platform env var names are case-insensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+
+                                # TODO:
+                                # Context "platform env var names are case-sensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+                            # }
+
+                            # TODO:
+                            # Context "environment variable didn't already exist" {
+                                # TODO:
+                                # It …
+                            # }
+                        # }
+
+                        # TODO:
+                        # Context "Value parameter is `$null" {
+                            # TODO:
+                            # Context "environment variable already existed" {
+                                # TODO:
+                                # It …
+                            # }
+
+                            # TODO:
+                            # Context "environment variable already existed, name cased differently" {
+                                # TODO:
+                                # Context "platform env var names are case-insensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+
+                                # TODO:
+                                # Context "platform env var names are case-sensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+                            # }
+
+                            # TODO:
+                            # Context "environment variable didn't already exist" {
+                                # TODO:
+                                # It …
+                            # }
+                        # }
+
+                        # TODO:
+                        # Context "Value parameter is empty string" {
+                            # TODO:
+                            # Context "environment variable already existed" {
+                                # TODO:
+                                # It …
+                            # }
+
+                            # TODO:
+                            # Context "environment variable already existed, name cased differently" {
+                                # TODO:
+                                # Context "platform env var names are case-insensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+
+                                # TODO:
+                                # Context "platform env var names are case-sensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+                            # }
+
+                            # TODO:
+                            # Context "environment variable didn't already exist" {
+                                # TODO:
+                                # It …
+                            # }
+                        # }
+                    }
+
+                    Context "strings SOME matching environment variable names" {
+                        # TODO:
+                        # Context "missing Value parameter" {
+                            # TODO:
+                            # It …
+
+                            # TODO:
+                            # Context "ErrorAction set to SilentlyContinue" {
+                            # }
+                        # }
+
+                        # TODO:
+                        # Context "Value parameter is valid" {
+                            # TODO:
+                            # Context "environment variable already existed" {
+                                # TODO:
+                                # It …
+                            # }
+
+                            # TODO:
+                            # Context "environment variable already existed, name cased differently" {
+                                # TODO:
+                                # Context "platform env var names are case-insensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+
+                                # TODO:
+                                # Context "platform env var names are case-sensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+                            # }
+
+                            # TODO:
+                            # Context "environment variable didn't already exist" {
+                                # TODO:
+                                # It …
+                            # }
+                        # }
+
+                        # TODO:
+                        # Context "Value parameter is `$null" {
+                            # TODO:
+                            # Context "environment variable already existed" {
+                                # TODO:
+                                # It …
+                            # }
+
+                            # TODO:
+                            # Context "environment variable already existed, name cased differently" {
+                                # TODO:
+                                # Context "platform env var names are case-insensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+
+                                # TODO:
+                                # Context "platform env var names are case-sensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+                            # }
+
+                            # TODO:
+                            # Context "environment variable didn't already exist" {
+                                # TODO:
+                                # It …
+                            # }
+                        # }
+
+                        # TODO:
+                        # Context "Value parameter is empty string" {
+                            # TODO:
+                            # Context "environment variable already existed" {
+                                # TODO:
+                                # It …
+                            # }
+
+                            # TODO:
+                            # Context "environment variable already existed, name cased differently" {
+                                # TODO:
+                                # Context "platform env var names are case-insensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+
+                                # TODO:
+                                # Context "platform env var names are case-sensitive" { # conditionally skip
+                                    # TODO:
+                                    # It …
+                                # }
+                            # }
+
+                            # TODO:
+                            # Context "environment variable didn't already exist" {
+                                # TODO:
+                                # It …
+                            # }
+                        # }
+                    }
                 }
 
                 Context "KVP parameter" {
