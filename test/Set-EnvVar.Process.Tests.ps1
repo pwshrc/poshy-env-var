@@ -33,14 +33,42 @@ Describe "cmdlet Set-EnvVar" {
                 [string] $Name,
 
                 [AllowNull()][AllowEmptyString()]
-                [object] $Value
+                [object] $Value,
+
+                [switch] $CaseChange
             )
-            SetEnvironmentVariableInScope -Scope $expectedEnvironmentVariableScope -Name $Name -Value $Value
-            $originalEnvironmentVariables[$Name] = $Value
+            if (-not $CaseChange) {
+                SetEnvironmentVariableInScope -Scope $expectedEnvironmentVariableScope -Name $Name -Value $Value
+                $originalEnvironmentVariables[$Name] = $Value
+            } else {
+                # TODO: Confirm this works.
+                $nameWithOriginalCasing = @($originalEnvironmentVariables.Keys | Where-Object { $_ -ieq $Name }) | Select-Object -First 1
+                SetEnvironmentVariableInScope -Scope $expectedEnvironmentVariableScope -Name $nameWithOriginalCasing -Value $null
+                $originalEnvironmentVariables.Remove($nameWithOriginalCasing)
+                SetEnvironmentVariableInScope -Scope $expectedEnvironmentVariableScope -Name $Name -Value $Value
+                $originalEnvironmentVariables[$Name] = $Value
+            }
         }
         function Assert-EnvironmentVariablesAllUnchanged {
             $actualEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
             $actualEnvironmentVariables | Should -BeHashtableEqualTo $originalEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
+        }
+        function Assert-EnvironmentVariablesWereSet {
+            [CmdletBinding()]
+            param(
+                [ValidateNotNullOrEmpty()]
+                [hashtable] $envExpected
+            )
+            $expectedEnvironmentVariables = $originalEnvironmentVariables.Clone()
+            $envExpected | Enumerate-DictionaryEntry | ForEach-Object {
+                if ($null -ne $_.Value) {
+                    $expectedEnvironmentVariables[$_.Key] = $_.Value
+                } elseif ($expectedEnvironmentVariables.ContainsKey($_.Key)) {
+                    $expectedEnvironmentVariables.Remove($_.Key)
+                }
+            }
+            $actualEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
+            $actualEnvironmentVariables | Should -BeHashtableEqualTo $expectedEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
         }
         function Assert-EnvironmentVariableWasSet {
             [CmdletBinding()]
@@ -51,10 +79,7 @@ Describe "cmdlet Set-EnvVar" {
                 [AllowNull()][AllowEmptyString()]
                 [object] $Value
             )
-            $expectedEnvironmentVariables = $originalEnvironmentVariables.Clone()
-            $expectedEnvironmentVariables[$Name] = $Value
-            $actualEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
-            $actualEnvironmentVariables | Should -BeHashtableEqualTo $expectedEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
+            Assert-EnvironmentVariablesWereSet -envExpected @{ $Name = $Value }
         }
         function Assert-EnvironmentVariableWasRemoved {
             [CmdletBinding()]
@@ -62,10 +87,7 @@ Describe "cmdlet Set-EnvVar" {
                 [ValidateNotNullOrEmpty()]
                 [string] $Name
             )
-            $expectedEnvironmentVariables = $originalEnvironmentVariables.Clone()
-            $expectedEnvironmentVariables.Remove($Name)
-            $actualEnvironmentVariables = GetAllEnvironmentVariablesInScope -Scope $expectedEnvironmentVariableScope -Hashtable
-            $actualEnvironmentVariables | Should -BeHashtableEqualTo $expectedEnvironmentVariables -KeyComparer (GetPlatformEnvVarNameStringComparer)
+            Assert-EnvironmentVariablesWereSet -envExpected @{ $Name = $null }
         }
     }
 
@@ -324,14 +346,14 @@ Describe "cmdlet Set-EnvVar" {
 
                 Context "Name parameter has multiple" {
                     BeforeEach {
-                        $attemptedEnvironmentVariableNames = @("foo" + [System.Guid]::NewGuid().ToString(), "foo" + [System.Guid]::NewGuid().ToString(), "foo" + [System.Guid]::NewGuid().ToString())
+                        $attemptedEnvironmentVariableNames = [string[]]@(("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()))
                         $sutInvocationArgs.Name = $attemptedEnvironmentVariableNames
                     }
 
                     Context "strings ALL matching environment variable names" {
                         BeforeEach {
                             $overwrittenEnvironmentVariableNames = $attemptedEnvironmentVariableNames
-                            $overwrittenEnvironmentVariableValues = @("baz"+[System.Guid]::NewGuid().ToString(), "baz"+[System.Guid]::NewGuid().ToString(), "baz"+[System.Guid]::NewGuid().ToString())
+                            $overwrittenEnvironmentVariableValues = [string[]]@(("baz"+[System.Guid]::NewGuid().ToString()), ("baz"+[System.Guid]::NewGuid().ToString()), ("baz"+[System.Guid]::NewGuid().ToString()))
                             Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableNames[0] -Value $overwrittenEnvironmentVariableValues[0]
                             Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableNames[1] -Value $overwrittenEnvironmentVariableValues[1]
                             Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableNames[2] -Value $overwrittenEnvironmentVariableValues[2]
@@ -346,29 +368,54 @@ Describe "cmdlet Set-EnvVar" {
                             # We don't test for 'ErrorAction set to SilentlyContinue' because it doesn't suppress ParameterBindingException.
                         }
 
-                        # TODO:
-                        # Context "Value parameter is valid" {
-                            # TODO:
-                            # Context "environment variables already existed" {
-                                # TODO:
-                                # It …
-                            # }
+                        Context "Value parameter is valid" {
+                            BeforeEach {
+                                $attemptedEnvironmentVariableValue = "bar" + [System.Guid]::NewGuid().ToString()
+                                $sutInvocationArgs.Value = $attemptedEnvironmentVariableValue
+                            }
 
-                            # TODO:
-                            # Context "environment variables already existed, names cased differently" {
-                                # TODO:
-                                # Context "platform env var names are case-insensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
+                            Context "environment variables already existed" {
+                                It "updates the environment variables" {
+                                    Set-EnvVar @sutInvocationArgs
 
-                                # TODO:
-                                # Context "platform env var names are case-sensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-                            # }
-                        # }
+                                    Assert-EnvironmentVariablesWereSet -envExpected @{
+                                        $overwrittenEnvironmentVariableNames[0] = $attemptedEnvironmentVariableValue;
+                                        $overwrittenEnvironmentVariableNames[1] = $attemptedEnvironmentVariableValue;
+                                        $overwrittenEnvironmentVariableNames[2] = $attemptedEnvironmentVariableValue
+                                    }
+                                }
+                            }
+
+                            Context "environment variables already existed, names cased differently" {
+                                BeforeEach {
+                                    Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableNames[1].ToUpper() -Value $overwrittenEnvironmentVariableValues[1] -CaseChange
+                                }
+
+                                Context "platform env var names are case-insensitive" -Skip:(-not $IsWindows) {
+                                    It "updates the environment variables' values, but doesn't change their names" {
+                                        Set-EnvVar @sutInvocationArgs
+
+                                        Assert-EnvironmentVariablesWereSet -envExpected @{
+                                            $overwrittenEnvironmentVariableNames[0] = $attemptedEnvironmentVariableValue;
+                                            $overwrittenEnvironmentVariableNames[1] = $attemptedEnvironmentVariableValue;
+                                            $overwrittenEnvironmentVariableNames[2] = $attemptedEnvironmentVariableValue
+                                        }
+                                    }
+                                }
+
+                                Context "platform env var names are case-sensitive" -Skip:($IsWindows) {
+                                    It "creates new environment variables with alternate casing only when casing diverges" {
+                                        Set-EnvVar @sutInvocationArgs
+
+                                        Assert-EnvironmentVariablesWereSet -envExpected @{
+                                            $overwrittenEnvironmentVariableNames[0] = $attemptedEnvironmentVariableValue;
+                                            $overwrittenEnvironmentVariableNames[1].ToUpper() = $attemptedEnvironmentVariableValue;
+                                            $overwrittenEnvironmentVariableNames[2] = $attemptedEnvironmentVariableValue
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         # TODO:
                         # Context "Value parameter is `$null" {
