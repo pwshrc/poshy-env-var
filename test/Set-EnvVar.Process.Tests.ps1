@@ -103,6 +103,7 @@ Describe "cmdlet Set-EnvVar" {
                 Context "no other parameters" {
                     It "errs" {
                         { Set-EnvVar @sutInvocationArgs } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+
                         Assert-EnvironmentVariablesAllUnchanged
                     }
 
@@ -112,14 +113,16 @@ Describe "cmdlet Set-EnvVar" {
                     #     BeforeEach {
                     #         $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
                     #     }
-
+                    #
                     #     It "does nothing" {
                     #         { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+                    #
                     #         Assert-EnvironmentVariablesAllUnchanged
                     #     }
-
+                    #
                     #     It "returns nothing" {
                     #         $result = Set-EnvVar @sutInvocationArgs
+                    #
                     #         $result | Should -BeNullOrEmpty
                     #     }
                     # }
@@ -134,6 +137,7 @@ Describe "cmdlet Set-EnvVar" {
                     Context "missing Value parameter" { # e.g. "no other parameters"
                         It "errs" {
                             { Set-EnvVar @sutInvocationArgs } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+
                             Assert-EnvironmentVariablesAllUnchanged
                         }
 
@@ -251,6 +255,7 @@ Describe "cmdlet Set-EnvVar" {
                         Context "environment variable already existed" {
                             It "errs" {
                                 { Set-EnvVar @sutInvocationArgs } | Should -Throw
+
                                 Assert-EnvironmentVariablesAllUnchanged
                             }
 
@@ -261,11 +266,13 @@ Describe "cmdlet Set-EnvVar" {
 
                                 It "does nothing" {
                                     { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
                                     Assert-EnvironmentVariablesAllUnchanged
                                 }
 
                                 It "returns nothing" {
                                     $result = Set-EnvVar @sutInvocationArgs
+
                                     $result | Should -BeNullOrEmpty
                                 }
                             }
@@ -275,6 +282,7 @@ Describe "cmdlet Set-EnvVar" {
                             Context "platform env var names are case-insensitive" -Skip:(-not $IsWindows) {
                                 It "errs" {
                                     { Set-EnvVar @sutInvocationArgs } | Should -Throw
+
                                     Assert-EnvironmentVariablesAllUnchanged
                                 }
 
@@ -285,11 +293,13 @@ Describe "cmdlet Set-EnvVar" {
 
                                     It "does nothing" {
                                         { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
                                         Assert-EnvironmentVariablesAllUnchanged
                                     }
 
                                     It "returns nothing" {
                                         $result = Set-EnvVar @sutInvocationArgs
+
                                         $result | Should -BeNullOrEmpty
                                     }
                                 }
@@ -298,6 +308,7 @@ Describe "cmdlet Set-EnvVar" {
                             Context "platform env var names are case-sensitive" -Skip:($IsWindows) {
                                 It "errs" {
                                     { Set-EnvVar @sutInvocationArgs } | Should -Throw
+
                                     Assert-EnvironmentVariablesAllUnchanged
                                 }
 
@@ -308,11 +319,13 @@ Describe "cmdlet Set-EnvVar" {
 
                                     It "does nothing" {
                                         { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
                                         Assert-EnvironmentVariablesAllUnchanged
                                     }
 
                                     It "returns nothing" {
                                         $result = Set-EnvVar @sutInvocationArgs
+
                                         $result | Should -BeNullOrEmpty
                                     }
                                 }
@@ -322,6 +335,7 @@ Describe "cmdlet Set-EnvVar" {
                         Context "environment variable didn't already exist" {
                             It "errs" {
                                 { Set-EnvVar @sutInvocationArgs } | Should -Throw
+
                                 Assert-EnvironmentVariablesAllUnchanged
                             }
 
@@ -332,11 +346,13 @@ Describe "cmdlet Set-EnvVar" {
 
                                 It "does nothing" {
                                     { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
                                     Assert-EnvironmentVariablesAllUnchanged
                                 }
 
                                 It "returns nothing" {
                                     $result = Set-EnvVar @sutInvocationArgs
+
                                     $result | Should -BeNullOrEmpty
                                 }
                             }
@@ -362,6 +378,7 @@ Describe "cmdlet Set-EnvVar" {
                         Context "missing Value parameter" { # e.g. "no other parameters"
                             It "errs" {
                                 { Set-EnvVar @sutInvocationArgs } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+
                                 Assert-EnvironmentVariablesAllUnchanged
                             }
 
@@ -473,6 +490,7 @@ Describe "cmdlet Set-EnvVar" {
                             Context "environment variables already existed" {
                                 It "errs" {
                                     { Set-EnvVar @sutInvocationArgs } | Should -Throw
+
                                     Assert-EnvironmentVariablesAllUnchanged
                                 }
 
@@ -483,11 +501,13 @@ Describe "cmdlet Set-EnvVar" {
 
                                     It "does nothing" {
                                         { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
                                         Assert-EnvironmentVariablesAllUnchanged
                                     }
 
                                     It "returns nothing" {
                                         $result = Set-EnvVar @sutInvocationArgs
+
                                         $result | Should -BeNullOrEmpty
                                     }
                                 }
@@ -501,6 +521,7 @@ Describe "cmdlet Set-EnvVar" {
                                 Context "platform env var names are case-insensitive" -Skip:(-not $IsWindows) {
                                     It "errs" {
                                         { Set-EnvVar @sutInvocationArgs } | Should -Throw
+
                                         Assert-EnvironmentVariablesAllUnchanged
                                     }
 
@@ -511,11 +532,13 @@ Describe "cmdlet Set-EnvVar" {
 
                                         It "does nothing" {
                                             { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
                                             Assert-EnvironmentVariablesAllUnchanged
                                         }
 
                                         It "returns nothing" {
                                             $result = Set-EnvVar @sutInvocationArgs
+
                                             $result | Should -BeNullOrEmpty
                                         }
                                     }
@@ -524,6 +547,7 @@ Describe "cmdlet Set-EnvVar" {
                                 Context "platform env var names are case-sensitive" -Skip:($IsWindows) {
                                     It "errs" {
                                         { Set-EnvVar @sutInvocationArgs } | Should -Throw
+
                                         Assert-EnvironmentVariablesAllUnchanged
                                     }
 
@@ -534,11 +558,13 @@ Describe "cmdlet Set-EnvVar" {
 
                                         It "does nothing" {
                                             { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
                                             Assert-EnvironmentVariablesAllUnchanged
                                         }
 
                                         It "returns nothing" {
                                             $result = Set-EnvVar @sutInvocationArgs
+
                                             $result | Should -BeNullOrEmpty
                                         }
                                     }
@@ -549,133 +575,160 @@ Describe "cmdlet Set-EnvVar" {
 
                     Context "strings NONE matching environment variable names" {
                         BeforeEach {
-                            # Intentionally left blank.
+                            # We skip calling Set-EnvironmentVariableWithProvenance so that the environment variables won't have previously existed.
                         }
 
                         Context "missing Value parameter" { # e.g. "no other parameters"
                             It "errs" {
                                 { Set-EnvVar @sutInvocationArgs } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+
                                 Assert-EnvironmentVariablesAllUnchanged
                             }
 
                             # We don't test for 'ErrorAction set to SilentlyContinue' because it doesn't suppress ParameterBindingException.
                         }
 
-                        # TODO:
-                        # Context "Value parameter is valid" {
-                            # TODO:
-                            # Context "environment variables didn't already exist" {
-                                # TODO:
-                                # It …
-                            # }
-                        # }
+                        Context "Value parameter is valid" {
+                            BeforeEach {
+                                $attemptedEnvironmentVariableValue = "bar" + [System.Guid]::NewGuid().ToString()
+                                $sutInvocationArgs.Value = $attemptedEnvironmentVariableValue
+                            }
 
-                        # TODO:
-                        # Context "Value parameter is `$null" {
-                            # TODO:
-                            # Context "environment variables didn't already exist" {
-                                # TODO:
-                                # It …
-                            # }
-                        # }
+                            It "adds the environment variables" {
+                                Set-EnvVar @sutInvocationArgs
 
-                        # TODO:
-                        # Context "Value parameter is empty string" {
-                            # TODO:
-                            # Context "environment variables didn't already exist" {
-                                # TODO:
-                                # It …
-                            # }
-                        # }
+                                Assert-EnvironmentVariablesWereSet -envExpected @{
+                                    $attemptedEnvironmentVariableNames[0] = $attemptedEnvironmentVariableValue;
+                                    $attemptedEnvironmentVariableNames[1] = $attemptedEnvironmentVariableValue;
+                                    $attemptedEnvironmentVariableNames[2] = $attemptedEnvironmentVariableValue
+                                }
+                            }
+                        }
+
+                        Context "Value parameter is `$null" {
+                            BeforeEach {
+                                $sutInvocationArgs.Add("Value", $null)
+                            }
+
+                            It "does nothing" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
+
+                            It "returns nothing" {
+                                $result = Set-EnvVar @sutInvocationArgs
+
+                                $result | Should -BeNullOrEmpty
+                            }
+                        }
+
+                        Context "Value parameter is empty string" {
+                            BeforeEach {
+                                $sutInvocationArgs.Add("Value", [string]::Empty)
+                            }
+
+                            It "errs" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Throw
+
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
+
+                            Context "ErrorAction set to SilentlyContinue" {
+                                BeforeEach {
+                                    $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                                }
+
+                                It "does nothing" {
+                                    { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
+                                    Assert-EnvironmentVariablesAllUnchanged
+                                }
+
+                                It "returns nothing" {
+                                    $result = Set-EnvVar @sutInvocationArgs
+
+                                    $result | Should -BeNullOrEmpty
+                                }
+                            }
+                        }
                     }
 
                     Context "strings SOME matching environment variable names" {
                         BeforeEach {
+                            # We skip calling Set-EnvironmentVariableWithProvenance for some environment variables so that they won't have previously existed.
                             $overwrittenEnvironmentVariableName = $attemptedEnvironmentVariableNames[1]
-                            $overwrittenEnvironmentVariableValue = "baz"+[System.Guid]::NewGuid().ToString()
-                            Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableName -Value $overwrittenEnvironmentVariableValue
+                            Set-EnvironmentVariableWithProvenance -Name $overwrittenEnvironmentVariableName -Value ("baz"+[System.Guid]::NewGuid().ToString())
                         }
 
                         Context "missing Value parameter" { # e.g. "no other parameters"
                             It "errs" {
                                 { Set-EnvVar @sutInvocationArgs } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+
                                 Assert-EnvironmentVariablesAllUnchanged
                             }
 
                             # We don't test for 'ErrorAction set to SilentlyContinue' because it doesn't suppress ParameterBindingException.
                         }
 
-                        # TODO:
-                        # Context "Value parameter is valid" {
-                            # TODO:
-                            # Context "environment variables mixed-existence" {
-                                # TODO:
-                                # It …
-                            # }
+                        Context "Value parameter is valid" {
+                            BeforeEach {
+                                $attemptedEnvironmentVariableValue = "bar" + [System.Guid]::NewGuid().ToString()
+                                $sutInvocationArgs.Value = $attemptedEnvironmentVariableValue
+                            }
 
-                            # TODO:
-                            # Context "environment variables mixed-existence, select name cased differently" {
-                                # TODO:
-                                # Context "platform env var names are case-insensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
+                            It "sets the environment variables" {
+                                Set-EnvVar @sutInvocationArgs
 
-                                # TODO:
-                                # Context "platform env var names are case-sensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-                            # }
-                        # }
+                                Assert-EnvironmentVariablesWereSet -envExpected @{
+                                    $attemptedEnvironmentVariableNames[0] = $attemptedEnvironmentVariableValue;
+                                    $attemptedEnvironmentVariableNames[1] = $attemptedEnvironmentVariableValue;
+                                    $attemptedEnvironmentVariableNames[2] = $attemptedEnvironmentVariableValue
+                                }
+                            }
+                        }
 
-                        # TODO:
-                        # Context "Value parameter is `$null" {
-                            # TODO:
-                            # Context "environment variables mixed-existence" {
-                                # TODO:
-                                # It …
-                            # }
+                        Context "Value parameter is `$null" {
+                            BeforeEach {
+                                $sutInvocationArgs.Add("Value", $null)
+                            }
 
-                            # TODO:
-                            # Context "environment variables mixed-existence, select name cased differently" {
-                                # TODO:
-                                # Context "platform env var names are case-insensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
+                            It "removes the matching environment variable" {
+                                Set-EnvVar @sutInvocationArgs
 
-                                # TODO:
-                                # Context "platform env var names are case-sensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-                            # }
-                        # }
+                                Assert-EnvironmentVariableWasRemoved -Name $overwrittenEnvironmentVariableName
+                            }
+                        }
 
-                        # TODO:
-                        # Context "Value parameter is empty string" {
-                            # TODO:
-                            # Context "environment variables mixed-existence" {
-                                # TODO:
-                                # It …
-                            # }
+                        Context "Value parameter is empty string" {
+                            BeforeEach {
+                                $sutInvocationArgs.Add("Value", [string]::Empty)
+                            }
 
-                            # TODO:
-                            # Context "environment variables mixed-existence, select name cased differently" {
-                                # TODO:
-                                # Context "platform env var names are case-insensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
+                            It "errs" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Throw
 
-                                # TODO:
-                                # Context "platform env var names are case-sensitive" { # conditionally skip
-                                    # TODO:
-                                    # It …
-                                # }
-                            # }
-                        # }
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
+
+                            Context "ErrorAction set to SilentlyContinue" {
+                                BeforeEach {
+                                    $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                                }
+
+                                It "does nothing" {
+                                    { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+
+                                    Assert-EnvironmentVariablesAllUnchanged
+                                }
+
+                                It "returns nothing" {
+                                    $result = Set-EnvVar @sutInvocationArgs
+
+                                    $result | Should -BeNullOrEmpty
+                                }
+                            }
+                        }
                     }
                 }
 
