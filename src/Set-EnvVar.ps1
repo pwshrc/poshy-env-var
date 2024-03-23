@@ -203,33 +203,31 @@ function Set-EnvVar() {
         }
     }
     Process {
-        if ($Environment -or ($Name.Count -gt 1)) {
-            try {
-                if ($Environment) {
-                    $Environment | Enumerate-DictionaryEntry | ForEach-Object {
-                        if (ExecuteWrite -envVarName $_.Key -envVarValue $_.Value) {
-                            if ($PassThru) {
-                                $resultsBuilder.Add($_.Key, $_.Value)
-                            }
-                        }
-                    }
-                } else { # $Name.Count -gt 1
-                    $Name | ForEach-Object {
-                        if (ExecuteWrite -envVarName $_ -envVarValue $Value) {
-                            if ($PassThru) {
-                                $resultsBuilder.Add($_, $Value)
-                            }
+        try {
+            if ($Environment) {
+                $Environment | Enumerate-DictionaryEntry | ForEach-Object {
+                    if (ExecuteWrite -envVarName $_.Key -envVarValue $_.Value) {
+                        if ($PassThru) {
+                            $resultsBuilder.Add($_.Key, $_.Value)
                         }
                     }
                 }
-            } finally {
-                if ($PassThru -and ($resultsBuilder.PSBase.Count -gt 0)) {
-                    $resultsBuilder.AsReadOnly() | Write-Output
-                    $resultsBuilder = $null
+            } elseif (($null -ne $Name) -and ($Name.Count -gt 1)) {
+                $Name | ForEach-Object {
+                    if (ExecuteWrite -envVarName $_ -envVarValue $Value) {
+                        if ($PassThru) {
+                            $resultsBuilder.Add($_, $Value)
+                        }
+                    }
                 }
+            } else {
+                # There's nothing to do in this case, we already did the simple writes in the Begin block.
             }
-        } else {
-            # There's nothing to do in this case, we already did the simple writes in the Begin block.
+        } finally {
+            if ($PassThru -and ($resultsBuilder.PSBase.Count -gt 0)) {
+                $resultsBuilder.AsReadOnly() | Write-Output
+            }
+            $resultsBuilder = $null
         }
     }
 }
