@@ -733,95 +733,108 @@ Describe "cmdlet Set-EnvVar" {
                 }
 
                 Context "KVP parameter" {
-                    # TODO:
-                    # Context "Value property is valid" {
-                        # TODO:
-                        # Context "environment variable already existed" {
-                            # TODO:
-                            # It …
-                        # }
+                    BeforeEach {
+                        $attemptedEnvironmentVariableName = "foo" + [System.Guid]::NewGuid().ToString()
+                        $attemptedEnvironmentVariableValue = "bar" + [System.Guid]::NewGuid().ToString()
+                        $attemptedKVP = [System.Collections.Generic.KeyValuePair[string, object]]::new($attemptedEnvironmentVariableName, $attemptedEnvironmentVariableValue)
+                        $sutInvocationArgs.Add('KVP', $attemptedKVP)
+                    }
 
-                        # TODO:
-                        # Context "environment variable already existed, name cased differently" {
-                            # TODO:
-                            # Context "platform env var names are case-insensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
+                    Context "Value property is valid" {
+                        Context "environment variable already existed" {
+                            BeforeEach {
+                                $originalEnvironmentVariableName = $attemptedEnvironmentVariableName
+                                Set-EnvironmentVariableWithProvenance -Name $originalEnvironmentVariableName -Value ("baz"+[System.Guid]::NewGuid().ToString())
+                            }
 
-                            # TODO:
-                            # Context "platform env var names are case-sensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
-                        # }
+                            It "updates the environment variable" {
+                                Set-EnvVar @sutInvocationArgs
 
-                        # TODO:
-                        # Context "environment variable didn't already exist" {
-                            # TODO:
-                            # It …
-                        # }
-                    # }
+                                Assert-EnvironmentVariableWasSet -Name $attemptedKVP.Key -Value $attemptedKVP.Value
+                            }
+                        }
 
-                    # TODO:
-                    # Context "Value property is `$null" {
-                        # TODO:
-                        # Context "environment variable already existed" {
-                            # TODO:
-                            # It …
-                        # }
+                        Context "environment variable already existed, name cased differently" {
+                            BeforeEach {
+                                $originalEnvironmentVariableName = $attemptedEnvironmentVariableName.ToUpper()
+                                Set-EnvironmentVariableWithProvenance -Name $originalEnvironmentVariableName -Value ("baz"+[System.Guid]::NewGuid().ToString())
+                            }
 
-                        # TODO:
-                        # Context "environment variable already existed, name cased differently" {
-                            # TODO:
-                            # Context "platform env var names are case-insensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
+                            Context "platform env var names are case-insensitive" -Skip:(-not $IsWindows) {
+                                It "updates the environment variable's value, but doesn't change its name" {
+                                    Set-EnvVar @sutInvocationArgs
 
-                            # TODO:
-                            # Context "platform env var names are case-sensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
-                        # }
+                                    Assert-EnvironmentVariableWasSet -Name $originalEnvironmentVariableName -Value $attemptedEnvironmentVariableValue
+                                }
+                            }
 
-                        # TODO:
-                        # Context "environment variable didn't already exist" {
-                            # TODO:
-                            # It …
-                        # }
-                    # }
+                            Context "platform env var names are case-sensitive" -Skip:($IsWindows) {
+                                It "creates a new environment variable, and doesn't change the original" {
+                                    Set-EnvVar @sutInvocationArgs
 
-                    # TODO:
-                    # Context "Value property is empty string" {
-                        # TODO:
-                        # Context "environment variable already existed" {
-                            # TODO:
-                            # It …
-                        # }
+                                    Assert-EnvironmentVariableWasSet -Name $originalEnvironmentVariableName -Value $attemptedEnvironmentVariableValue
+                                }
+                            }
+                        }
 
-                        # TODO:
-                        # Context "environment variable already existed, name cased differently" {
-                            # TODO:
-                            # Context "platform env var names are case-insensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
+                        Context "environment variable didn't already exist" {
+                            It "creates the environment variable" {
+                                Set-EnvVar @sutInvocationArgs
 
-                            # TODO:
-                            # Context "platform env var names are case-sensitive" { # conditionally skip
-                                # TODO:
-                                # It …
-                            # }
-                        # }
+                                Assert-EnvironmentVariableWasSet -Name $attemptedEnvironmentVariableName -Value $attemptedEnvironmentVariableValue
+                            }
+                        }
+                    }
 
-                        # TODO:
-                        # Context "environment variable didn't already exist" {
-                            # TODO:
-                            # It …
-                        # }
-                    # }
+                    Context "Value property is `$null" {
+                        BeforeEach {
+                            $attemptedKVP = [System.Collections.Generic.KeyValuePair[string, object]]::new($attemptedEnvironmentVariableName, $null)
+                            $sutInvocationArgs['KVP'] = $attemptedKVP
+                        }
+
+                        Context "environment variable already existed" {
+                            BeforeEach {
+                                Set-EnvironmentVariableWithProvenance -Name $attemptedEnvironmentVariableName -Value ("baz"+[System.Guid]::NewGuid().ToString())
+                            }
+
+                            It "removes the environment variable" {
+                                Set-EnvVar @sutInvocationArgs
+
+                                Assert-EnvironmentVariableWasRemoved -Name $attemptedEnvironmentVariableName
+                            }
+                        }
+
+                        Context "environment variable already existed, name cased differently" {
+                            BeforeEach {
+                                $originalEnvironmentVariableName = $attemptedEnvironmentVariableName.ToUpper()
+                                Set-EnvironmentVariableWithProvenance -Name $originalEnvironmentVariableName -Value ("baz"+[System.Guid]::NewGuid().ToString())
+                            }
+
+                            Context "platform env var names are case-insensitive" -Skip:(-not $IsWindows) {
+                                It "removes the environment variable" {
+                                    Set-EnvVar @sutInvocationArgs
+
+                                    Assert-EnvironmentVariableWasRemoved -Name $originalEnvironmentVariableName
+                                }
+                            }
+
+                            Context "platform env var names are case-sensitive" -Skip:($IsWindows) {
+                                It "removes the environment variable" {
+                                    Set-EnvVar @sutInvocationArgs
+
+                                    Assert-EnvironmentVariableWasRemoved -Name $originalEnvironmentVariableName
+                                }
+                            }
+                        }
+
+                        Context "environment variable didn't already exist" {
+                            It "does nothing" {
+                                Set-EnvVar @sutInvocationArgs
+
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
+                        }
+                    }
                 }
 
                 Context "Entry parameter" {
