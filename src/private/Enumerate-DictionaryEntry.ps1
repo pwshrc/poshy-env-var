@@ -11,19 +11,20 @@ function Enumerate-DictionaryEntry {
         [System.Collections.IDictionary] $InputObject
     )
     Process {
-        if ($PSCmdlet.MyInvocation.ExpectingInput) {
-            $enumerator = $PSItem.GetEnumerator()
+        function Enumerate {
+            param([System.Collections.IDictionary] $dictionary)
+            $enumerator = $dictionary.GetEnumerator()
             while ($enumerator.MoveNext()) {
                 Write-Output $enumerator.Entry
             }
         }
+        if ($PSCmdlet.MyInvocation.ExpectingInput) {
+            Enumerate $PSItem
+        }
     }
     End {
         if ((-not $PSCmdlet.MyInvocation.ExpectingInput) -and $InputObject) {
-            $enumerator = $InputObject.GetEnumerator()
-            while ($enumerator.MoveNext()) {
-                Write-Output $enumerator.Entry
-            }
+            Enumerate $InputObject
         }
     }
 }
