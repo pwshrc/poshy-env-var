@@ -1219,147 +1219,156 @@ Describe "cmdlet Set-EnvVar" {
                         }
                     }
 
-                    # Context "keys (NONE) match environment variable names" {
-                    #     BeforeEach {
-                    #         $attemptedEnvironmentVariableNames = [string[]]@(("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()))
+                    Context "keys (NONE) match environment variable names" {
+                        BeforeEach {
+                            $attemptedEnvironmentVariableNames = [string[]]@(("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()), ("foo" + [System.Guid]::NewGuid().ToString()))
 
-                    #         # We skip calling Set-EnvironmentVariableWithProvenance so that the environment variables won't have previously existed.
-                    #     }
+                            # We skip calling Set-EnvironmentVariableWithProvenance so that the environment variables won't have previously existed.
+                        }
 
-                    #     Context "values (ALL) are valid" {
-                    #         BeforeEach {
-                    #             $attemptedEnvironmentVariableValues = [string[]]@(("bar" + [System.Guid]::NewGuid().ToString()), ("bar" + [System.Guid]::NewGuid().ToString()), ("bar" + [System.Guid]::NewGuid().ToString()))
-                    #             $attemptedEnvironmentVariableChanges = @{
-                    #                 $attemptedEnvironmentVariableNames[0] = $attemptedEnvironmentVariableValues[0];
-                    #                 $attemptedEnvironmentVariableNames[1] = $attemptedEnvironmentVariableValues[1];
-                    #                 $attemptedEnvironmentVariableNames[2] = $attemptedEnvironmentVariableValues[2]
-                    #             }
-                    #             $sutInvocationArgs['Environment'] = $attemptedEnvironmentVariableChanges
-                    #         }
+                        Context "values (ALL) are valid" {
+                            BeforeEach {
+                                $attemptedEnvironmentVariableValues = [string[]]@(("bar" + [System.Guid]::NewGuid().ToString()), ("bar" + [System.Guid]::NewGuid().ToString()), ("bar" + [System.Guid]::NewGuid().ToString()))
+                                $expectedEnvironmentVariableChanges = @{
+                                    $attemptedEnvironmentVariableNames[0] = $attemptedEnvironmentVariableValues[0];
+                                    $attemptedEnvironmentVariableNames[1] = $attemptedEnvironmentVariableValues[1];
+                                    $attemptedEnvironmentVariableNames[2] = $attemptedEnvironmentVariableValues[2]
+                                }
+                                $sutInvocationArgs['Environment'] = $expectedEnvironmentVariableChanges
+                            }
 
-                    #         It "adds the environment variables" {
-                    #             Set-EnvVar @sutInvocationArgs
+                            It "adds the environment variables" {
+                                Set-EnvVar @sutInvocationArgs
 
-                    #             Assert-EnvironmentVariablesWereSet -envExpected @{
-                    #                 $attemptedEnvironmentVariableNames[0] = $attemptedEnvironmentVariableValues[0];
-                    #                 $attemptedEnvironmentVariableNames[1] = $attemptedEnvironmentVariableValues[1];
-                    #                 $attemptedEnvironmentVariableNames[2] = $attemptedEnvironmentVariableValues[2]
-                    #             }
-                    #         }
-                    #     }
+                                Assert-EnvironmentVariablesWereSet -envExpected $expectedEnvironmentVariableChanges
+                            }
+                        }
 
-                    #     Context "values (ALL) are `$null" {
-                    #         BeforeEach {
-                    #             $attemptedEnvironmentVariableChanges = @{
-                    #                 $attemptedEnvironmentVariableNames[0] = $null;
-                    #                 $attemptedEnvironmentVariableNames[1] = $null;
-                    #                 $attemptedEnvironmentVariableNames[2] = $null
-                    #             }
-                    #             $sutInvocationArgs['Environment'] = $attemptedEnvironmentVariableChanges
-                    #         }
+                        Context "values (ALL) are `$null" {
+                            BeforeEach {
+                                $attemptedEnvironmentVariableChanges = @{
+                                    $attemptedEnvironmentVariableNames[0] = $null;
+                                    $attemptedEnvironmentVariableNames[1] = $null;
+                                    $attemptedEnvironmentVariableNames[2] = $null
+                                }
+                                $sutInvocationArgs['Environment'] = $attemptedEnvironmentVariableChanges
+                            }
 
-                    #         It "does nothing" {
-                    #             { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+                            It "does nothing" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
 
-                    #             Assert-EnvironmentVariablesAllUnchanged
-                    #         }
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
 
-                    #         It "returns nothing" {
-                    #             $result = Set-EnvVar @sutInvocationArgs
+                            It "returns nothing" {
+                                $result = Set-EnvVar @sutInvocationArgs
 
-                    #             $result | Should -BeNullOrEmpty
-                    #         }
-                    #     }
+                                $result | Should -BeNullOrEmpty
+                            }
+                        }
 
-                    #     # TODO: add values that are NOT null. make NONE keys match existing environment variable names.
-                    #     Context "values (SOME) are `$null" {
-                    #         BeforeEach {
-                    #             $attemptedEnvironmentVariableChanges = @{
-                    #                 $attemptedEnvironmentVariableNames[0] = $null;
-                    #                 $attemptedEnvironmentVariableNames[1] = $null;
-                    #                 $attemptedEnvironmentVariableNames[2] = $null
-                    #             }
-                    #             $sutInvocationArgs['Environment'] = $attemptedEnvironmentVariableChanges
-                    #         }
+                        Context "values (SOME) are `$null" {
+                            BeforeEach {
+                                $nonNullAttemptedEnvironmentVariableValues = @(("bax"+[System.Guid]::NewGuid().ToString()), ("bax"+[System.Guid]::NewGuid().ToString()))
+                                $attemptedEnvironmentVariableChanges = @{
+                                    $attemptedEnvironmentVariableNames[0] = $nonNullAttemptedEnvironmentVariableValues[0];
+                                    $attemptedEnvironmentVariableNames[1] = $null;
+                                    $attemptedEnvironmentVariableNames[2] = $null;
+                                    $attemptedEnvironmentVariableNames[3] = $nonNullAttemptedEnvironmentVariableValues[1];
+                                    $attemptedEnvironmentVariableNames[4] = $null
+                                }
+                                $expectedEnvironmentVariableChanges = @{
+                                    $attemptedEnvironmentVariableNames[0] = $nonNullAttemptedEnvironmentVariableValues[0];
+                                    $attemptedEnvironmentVariableNames[3] = $nonNullAttemptedEnvironmentVariableValues[1]
+                                }
+                                $sutInvocationArgs['Environment'] = $attemptedEnvironmentVariableChanges
+                            }
 
-                    #         It "removes the matching environment variable" {
-                    #             Set-EnvVar @sutInvocationArgs
+                            It "updates existing environment variables with non-null values" {
+                                Set-EnvVar @sutInvocationArgs
 
-                    #             Assert-EnvironmentVariableWasRemoved -Name $overwrittenEnvironmentVariableName
-                    #         }
-                    #     }
+                                Assert-EnvironmentVariablesWereSet -envExpected $expectedEnvironmentVariableChanges
+                            }
+                        }
 
-                    #     Context "values (ALL) are empty strings" {
-                    #         BeforeEach {
-                    #             $attemptedEnvironmentVariableChanges = @{
-                    #                 $attemptedEnvironmentVariableNames[0] = [string]::Empty;
-                    #                 $attemptedEnvironmentVariableNames[1] = [string]::Empty;
-                    #                 $attemptedEnvironmentVariableNames[2] = [string]::Empty
-                    #             }
-                    #             $sutInvocationArgs['Environment'] = $attemptedEnvironmentVariableChanges
-                    #         }
+                        Context "values (ALL) are empty strings" {
+                            BeforeEach {
+                                $attemptedEnvironmentVariableChanges = @{
+                                    $attemptedEnvironmentVariableNames[0] = [string]::Empty;
+                                    $attemptedEnvironmentVariableNames[1] = [string]::Empty;
+                                    $attemptedEnvironmentVariableNames[2] = [string]::Empty
+                                }
+                                $sutInvocationArgs['Environment'] = $attemptedEnvironmentVariableChanges
+                            }
 
-                    #         It "errs" {
-                    #             { Set-EnvVar @sutInvocationArgs } | Should -Throw
+                            It "errs" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Throw
 
-                    #             Assert-EnvironmentVariablesAllUnchanged
-                    #         }
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
 
-                    #         Context "ErrorAction set to SilentlyContinue" {
-                    #             BeforeEach {
-                    #                 $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
-                    #             }
+                            Context "ErrorAction set to SilentlyContinue" {
+                                BeforeEach {
+                                    $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                                }
 
-                    #             It "does nothing" {
-                    #                 { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+                                It "does nothing" {
+                                    { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
 
-                    #                 Assert-EnvironmentVariablesAllUnchanged
-                    #             }
+                                    Assert-EnvironmentVariablesAllUnchanged
+                                }
 
-                    #             It "returns nothing" {
-                    #                 $result = Set-EnvVar @sutInvocationArgs
+                                It "returns nothing" {
+                                    $result = Set-EnvVar @sutInvocationArgs
 
-                    #                 $result | Should -BeNullOrEmpty
-                    #             }
-                    #         }
-                    #     }
+                                    $result | Should -BeNullOrEmpty
+                                }
+                            }
+                        }
 
-                    #     # TODO: add values that are NOT empty strings. make NONE keys match existing environment variable names.
-                    #     Context "values (SOME) are empty strings" {
-                    #         BeforeEach {
-                    #             $attemptedEnvironmentVariableChanges = @{
-                    #                 $attemptedEnvironmentVariableNames[0] = [string]::Empty;
-                    #                 $attemptedEnvironmentVariableNames[1] = [string]::Empty;
-                    #                 $attemptedEnvironmentVariableNames[2] = [string]::Empty;
-                    #             }
-                    #             $sutInvocationArgs['Environment'] = $attemptedEnvironmentVariableChanges
-                    #         }
+                        Context "values (SOME) are empty strings" {
+                            BeforeEach {
+                                $nonBlankAttemptedEnvironmentVariableValues = @(("bax"+[System.Guid]::NewGuid().ToString()), ("bax"+[System.Guid]::NewGuid().ToString()))
+                                $attemptedEnvironmentVariableChanges = @{
+                                    $attemptedEnvironmentVariableNames[0] = [string]::Empty;
+                                    $attemptedEnvironmentVariableNames[1] = $nonBlankAttemptedEnvironmentVariableValues[0];
+                                    $attemptedEnvironmentVariableNames[2] = [string]::Empty;
+                                    $attemptedEnvironmentVariableNames[3] = $nonBlankAttemptedEnvironmentVariableValues[1];
+                                    $attemptedEnvironmentVariableNames[4] = [string]::Empty
+                                }
+                                $sutInvocationArgs['Environment'] = $attemptedEnvironmentVariableChanges
+                            }
 
-                    #         It "errs" {
-                    #             { Set-EnvVar @sutInvocationArgs } | Should -Throw
+                            It "errs" {
+                                { Set-EnvVar @sutInvocationArgs } | Should -Throw
 
-                    #             Assert-EnvironmentVariablesAllUnchanged
-                    #         }
+                                Assert-EnvironmentVariablesAllUnchanged
+                            }
 
-                    #         Context "ErrorAction set to SilentlyContinue" {
-                    #             BeforeEach {
-                    #                 $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
-                    #             }
+                            Context "ErrorAction set to SilentlyContinue" {
+                                BeforeEach {
+                                    $sutInvocationArgs.ErrorAction = [System.Management.Automation.ActionPreference]::SilentlyContinue
+                                }
 
-                    #             It "does nothing" {
-                    #                 { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
+                                It "only applies valid environment variable values" {
+                                    $expectedEnvironmentVariableChanges = @{
+                                        $attemptedEnvironmentVariableNames[1] = $nonBlankAttemptedEnvironmentVariableValues[0];
+                                        $attemptedEnvironmentVariableNames[3] = $nonBlankAttemptedEnvironmentVariableValues[1];
+                                    }
 
-                    #                 Assert-EnvironmentVariablesAllUnchanged
-                    #             }
+                                    { Set-EnvVar @sutInvocationArgs } | Should -Not -Throw
 
-                    #             It "returns nothing" {
-                    #                 $result = Set-EnvVar @sutInvocationArgs
+                                    Assert-EnvironmentVariablesWereSet -envExpected $expectedEnvironmentVariableChanges
+                                }
 
-                    #                 $result | Should -BeNullOrEmpty
-                    #             }
-                    #         }
-                    #     }
-                    # }
+                                It "returns nothing" {
+                                    $result = Set-EnvVar @sutInvocationArgs
+
+                                    $result | Should -BeNullOrEmpty
+                                }
+                            }
+                        }
+                    }
 
                     # Context "keys (SOME) match environment variable names" {
                     #     BeforeEach {
